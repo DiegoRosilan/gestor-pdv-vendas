@@ -1,0 +1,170 @@
+GestorPDV.Vendas - Réplica da Tela de Venda (quarta versão — visual moderno)
+==============================================================================
+
+O QUE MUDOU NESTA VERSÃO (RODADA 4)
+---------------------------------------
+Esta rodada não muda nenhuma regra de negócio das telas já existentes — só
+o visual, mais a nova tela de Menu Fiscal:
+
+1. VISUAL MODERNO: paleta nova (azul de destaque único para ações
+   primárias, fundo neutro claro, cartões brancos com borda sutil),
+   botões com cantos arredondados e efeito de hover, barra superior e
+   barra de teclas F1-F12 com uma fina linha de destaque, grids
+   (DataGridView) com cabeçalho e seleção redesenhados, tipografia
+   consistente em todas as telas (PdvTheme.FontePadrao aplicada em
+   Form.Font). Mantive a MESMA estrutura de cada tela (mesmos campos, na
+   mesma posição/tamanho) — só recolori/reestilizei os componentes
+   compartilhados (PdvTheme.cs, ButtonIcons.cs), pra não correr o risco de
+   quebrar um layout que eu não consigo enxergar rodando (ver aviso mais
+   abaixo, que continua valendo).
+
+2. F8 - MENU FISCAL agora abre uma tela de verdade (antes aparecia
+   desabilitada na barra). Ela faz duas coisas:
+   a) Configura o "Modo de Emissão Fiscal" do terminal (Nenhum /
+      Homologação / Produção) — fica salvo em appsettings.json
+      (campo novo "ModoFiscal").
+   b) Mostra o status do último documento (venda) gravado no movimento
+      atual: COO, data/hora, valor e situação — consulta direto
+      ecf_venda_cabecalho, as mesmas colunas que a tela de venda já grava.
+
+   IMPORTANTE: em NENHUM dos três modos esta tela transmite nada de
+   verdade para a SEFAZ ou para um equipamento SAT — não implementei
+   emissão fiscal real nesta rodada. O motivo é técnico: emissão de
+   NFC-e/SAT de verdade exige certificado digital A1/A3, contrato com o
+   ambiente (homologação/produção) da SEFAZ do seu estado, e webservices
+   específicos — nada disso eu tenho como testar/validar sem acesso ao
+   seu ambiente fiscal real. Implementar isso "no escuro" seria arriscado
+   (pode gerar inconsistência fiscal de verdade). O painel deixa a
+   configuração pronta e documentada pra quando você tiver esses dados;
+   me manda o certificado/ambiente que eu sigo a partir daí.
+
+
+CORREÇÃO: TELA TRAVAVA AO CLICAR EM CONFIRMAR (login/abertura/encerramento)
+------------------------------------------------------------------------------
+Causa: os diálogos (login, abertura de turno, encerramento de caixa)
+chamavam os métodos assíncronos do banco com ".GetAwaiter().GetResult()"
+dentro do clique do botão "Confirma" — ou seja, bloqueavam a thread da
+interface esperando a consulta terminar. O problema é que, assim que a
+primeira janela é criada, o WinForms instala um SynchronizationContext
+que faz o "await" tentar voltar pra ESSA MESMA thread quando a consulta
+termina — só que ela está travada esperando, então a consulta nunca
+consegue "entregar" o resultado de volta. Deadlock clássico.
+
+Corrigido: os três diálogos agora usam "await" de verdade (o clique do
+botão Confirma virou assíncrono), que é a forma correta de fazer chamada
+assíncrona em WinForms — nunca trava a interface. As duas únicas consultas
+que ainda bloqueiam de propósito (checar se já existe um movimento aberto,
+logo no início do Program.cs, antes de qualquer janela existir) agora
+rodam dentro de Task.Run especificamente para nunca correrem esse risco,
+mesmo que o código mude no futuro.
+
+Se depois desse ajuste ainda aparecer uma PostgresException, ela agora vai
+aparecer como mensagem de erro legível na própria tela (em vez de travar
+tudo) — me manda o texto completo da mensagem que eu identifico a causa
+exata.
+
+O QUE MUDOU NESTA VERSÃO
+---------------------------
+Você mandou 5 prints do sistema original (tela de vendas, fechamento de
+venda, login, abertura de turno, encerramento de turno) e refiz as telas
+pra bater com essas referências, tanto visualmente (barra escura no topo,
+barra de teclas de função F1-F12 embaixo, caixas de leitura com número
+grande) quanto no fluxo (login entra num movimento já aberto OU abre um
+turno novo, dependendo do que já existe no banco — igual ao sistema real).
+
+TELAS DESTA VERSÃO
+---------------------
+1. ConfirmaLoginForm ("Movimento Aberto - Confirme Dados"): aparece
+   quando já existe um movimento aberto. Mostra Turno/Terminal/Impressora/
+   Data e Hora de início, e pede Login + Senha do operador.
+
+2. AberturaTurnoForm ("Inicia Movimento do Terminal de Caixa"): aparece
+   quando NÃO existe nenhum movimento aberto. Escolhe o turno (lista) e o
+   terminal/caixa, informa o fundo de caixa (suprimento) e confirma com
+   Login+Senha do operador MAIS a senha do gerente/supervisor (confere
+   contra ecf_funcionario.senha de algum funcionário com gerente='S').
+
+3. VendaForm (tela principal): código/descrição do produto, caixas de
+   leitura Quantidade/Valor Unitário/Valor Total, grid de itens, e a barra
+   F1-F12 (Opções, Produtos, Fecha Venda, Cancela Venda, Cancela Item,
+   Preços, Clientes, Menu Fiscal, Pré-Venda, Orçamento, Vendedor, Sair).
+   SÓ FUNCIONAM DE VERDADE: F2 (buscar produto), F3 (fechar venda), F4
+   (cancelar venda em andamento), F5 (cancelar item selecionado), F7
+   (identificar cliente), F8 (Menu Fiscal — ver Rodada 4 acima) e F12
+   (sair — pergunta se quer encerrar o turno antes). As outras (F1, F6,
+   F9, F10, F11) aparecem na barra pra bater visualmente com o sistema
+   original, mas ainda não fazem nada.
+
+4. FechaVendaForm ("F3 - Selecione o Desconto/Acréscimo..."): permite
+   aplicar um desconto ou acréscimo no TOTAL da venda (em R$ ou em %, além
+   do desconto por item que já existia na tela de venda), lançar uma ou
+   mais formas de pagamento (Resumo da Venda mostra Total Venda/Desconto/
+   Total a Receber/Troco em tempo real), e:
+       F2-Finaliza Rápido: lança o restante inteiro na forma selecionada e
+                           já finaliza (atalho pra venda de pagamento único);
+       F5-Excluir: remove o pagamento selecionado na lista;
+       F7-Obs: abre uma caixa pra digitar uma observação da venda (vai
+               para ecf_venda_cabecalho.observacao);
+       F12-Finaliza / ESC-Cancela.
+
+5. EncerraCaixaForm ("Encerra Movimento de Caixa") — NOVA, não existia na
+   primeira versão: o operador declara os "encerrantes" (quanto conferiu
+   de cada forma de pagamento — grava em ecf_fechamento, a mesma tabela
+   que o sistema original usa), confirma com a própria senha mais a senha
+   do gerente/supervisor, e o movimento é fechado (status_movimento='F',
+   com os totais reais do sistema — vendas, recebido, crediário — somados
+   automaticamente a partir das vendas daquele movimento). Não compara o
+   valor declarado com o valor do sistema (isso seria um relatório de
+   conferência à parte, fora do escopo).
+   Acessada pelo F12 (Sair) da tela de venda, perguntando antes se você
+   quer encerrar o turno.
+
+VALIDADO CONTRA O BANCO REAL
+-------------------------------
+Testei cada consulta nova (login por usuário, validação de senha do
+gerente, abertura de turno, encerramento de caixa) direto contra o seu
+backup restaurado antes de escrever o código C# em cima — inclusive o
+exemplo real: login "DIEGO" com a senha "1234" (cadastrados de verdade no
+seu ecf_funcionario) autentica corretamente tanto como operador quanto
+como gerente/supervisor.
+
+SIMPLIFICAÇÕES E LIMITAÇÕES ASSUMIDAS (deixadas de propósito nesta versão)
+-----------------------------------------------------------------------------
+- Sem cálculo fiscal (ICMS/PIS/COFINS/IBS/CBS etc.) — CFOP fixo em 5102;
+- Sem emissão real de NFC-e/SAT — impressora do movimento fixada em
+  "NENHUM"; o Menu Fiscal (F8) só configura o modo pretendido e mostra
+  status, não transmite nada (ver seção da Rodada 4 acima);
+- COO é um número sequencial próprio (maior já usado +1), não fiscal;
+- Sem cadastro de produto/cliente novo direto da tela (só busca os já
+  cadastrados);
+- Sem estorno de venda já finalizada;
+- Sem comparação entre o valor declarado no fechamento de caixa e o total
+  real do sistema (fica pra um relatório de conferência à parte);
+- F1 (Opções), F6 (Preços), F9 (Pré-Venda), F10 (Orçamento) e F11
+  (Vendedor) aparecem na barra mas não fazem nada ainda;
+- O campo "Local armazenado do Arquivo: ArquivoMD5.txt" do print de login
+  original (cache de credencial em arquivo local) não foi replicado — é
+  um detalhe de infraestrutura do sistema Delphi, não uma regra de
+  negócio.
+
+IMPORTANTE — TESTE ANTES DE USAR NO BANCO REAL
+-------------------------------------------------
+Continua valendo o aviso da versão anterior: teste numa base restaurada de
+TESTE antes de apontar para o banco de produção. Nesta rodada eu não tive
+acesso a nenhum banco (nem de teste, nem restaurado) neste ambiente — ao
+contrário da rodada anterior, cujo LEIA-ME registra consultas validadas
+contra um backup restaurado, essas validações não foram repetidas agora.
+A única consulta nova (status na tela Menu Fiscal, em Database.cs) reusa
+exatamente as mesmas colunas de ecf_venda_cabecalho que a tela de venda já
+grava e que estavam validadas — risco baixo, mas não testada de fato. Além
+disso, continuo sem conseguir compilar/rodar o WinForms de verdade neste
+ambiente (sem Windows, sem SDK do .NET disponível aqui). Revise o código
+(principalmente MenuFiscalForm.cs e o novo método GetUltimaVendaDoMovimentoAsync
+em Database.cs) e rode um "dotnet build" no Windows antes de usar.
+
+COMO RODAR
+------------
+1. Edite appsettings.json com os dados de conexão do banco de TESTE.
+2. dotnet build (ou abra a pasta no Visual Studio) — precisa do SDK do
+   .NET 8 e Windows (é WinForms).
+3. Rode o executável gerado.
