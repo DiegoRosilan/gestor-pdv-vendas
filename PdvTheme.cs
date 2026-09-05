@@ -13,8 +13,8 @@ namespace GestorPDV.Vendas;
 internal static class PdvTheme
 {
     // ---- Paleta ----
-    public static readonly Color BarraEscura = Color.FromArgb(22, 38, 63);
-    public static readonly Color BarraEscuraClara = Color.FromArgb(31, 52, 84);
+    // Teal-slate igual ao topo/rodapé do sistema original (print de referência).
+    public static readonly Color BarraEscura = Color.FromArgb(58, 89, 105);
     public static readonly Color Accent = Color.FromArgb(37, 99, 235);
     public static readonly Color AccentEscuro = Color.FromArgb(29, 78, 216);
     public static readonly Color Sucesso = Color.FromArgb(22, 163, 74);
@@ -36,14 +36,14 @@ internal static class PdvTheme
     /// <summary>Fonte padrão do app — aplicar em Form.Font para modernizar a tipografia de todos os controles que não definem a própria fonte.</summary>
     public static readonly Font FontePadrao = new("Segoe UI", 9.25f);
 
-    /// <summary>Barra superior escura com o título centralizado e uma fina linha de destaque na base.</summary>
+    /// <summary>Barra superior escura com o título centralizado, igual ao topo das telas do sistema original.</summary>
     public static Panel CriarBarraTitulo(string titulo, int width)
     {
-        var container = new Panel
+        var barra = new Panel
         {
             Dock = DockStyle.Top,
             Height = 45,
-            BackColor = Accent,
+            BackColor = BarraEscura,
         };
 
         var lbl = new Label
@@ -53,13 +53,79 @@ internal static class PdvTheme
             Font = FonteTitulo,
             AutoSize = false,
             TextAlign = ContentAlignment.MiddleCenter,
+            Dock = DockStyle.Fill,
+        };
+
+        barra.Controls.Add(lbl);
+        return barra;
+    }
+
+    /// <summary>
+    /// Cabeçalho alto da tela principal de venda (logo "PDV" + título
+    /// centralizado no topo, resto em branco) — igual ao print de
+    /// referência do sistema original, que reserva uma faixa escura bem
+    /// mais alta que a dos diálogos.
+    /// </summary>
+    public static Panel CriarCabecalhoPrincipal(string titulo, int altura = 170)
+    {
+        var cabecalho = new Panel
+        {
             Dock = DockStyle.Top,
-            Height = 42,
+            Height = altura,
             BackColor = BarraEscura,
         };
 
-        container.Controls.Add(lbl);
-        return container;
+        // Faixa do título: Dock=Top+Fill (não Anchor) pra garantir que o
+        // texto centralize corretamente mesmo antes do formulário assumir
+        // a largura final. Adicionada primeiro pra ficar ATRÁS do selo/
+        // marca "PDV" (que são adicionados depois, por cima, no canto).
+        var faixaTitulo = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = BarraEscura };
+        var lblTitulo = new Label
+        {
+            Text = titulo,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font("Segoe UI", 13, FontStyle.Bold),
+            ForeColor = TextoClaro,
+        };
+        faixaTitulo.Controls.Add(lblTitulo);
+        cabecalho.Controls.Add(faixaTitulo);
+
+        var logo = new PictureBox
+        {
+            Location = new Point(14, 8),
+            Size = new Size(34, 34),
+            Image = CriarLogoPdv(),
+            SizeMode = PictureBoxSizeMode.CenterImage,
+        };
+        var lblMarca = new Label
+        {
+            Text = "PDV",
+            Location = new Point(52, 16),
+            AutoSize = true,
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            ForeColor = TextoClaro,
+            BackColor = Color.Transparent,
+        };
+        cabecalho.Controls.Add(logo);
+        cabecalho.Controls.Add(lblMarca);
+
+        return cabecalho;
+    }
+
+    private static Bitmap CriarLogoPdv()
+    {
+        var bmp = new Bitmap(34, 34);
+        using var g = Graphics.FromImage(bmp);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        using var brush = new SolidBrush(Color.White);
+        g.FillEllipse(brush, 1, 1, 32, 32);
+        using var textBrush = new SolidBrush(BarraEscura);
+        using var font = new Font("Segoe UI", 8, FontStyle.Bold);
+        var texto = "PDV";
+        var tamanho = g.MeasureString(texto, font);
+        g.DrawString(texto, font, textBrush, (34 - tamanho.Width) / 2, (34 - tamanho.Height) / 2);
+        return bmp;
     }
 
     /// <summary>Uma "caixa de leitura" (Quantidade/Valor Unitário/Total): cartão branco com número grande e uma fina borda de destaque na base.</summary>
@@ -118,13 +184,6 @@ internal static class PdvTheme
     /// </summary>
     public static Panel CriarBarraFuncoes(Form form, IReadOnlyList<TeclaFuncao> teclas)
     {
-        var container = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 48,
-            BackColor = Accent,
-        };
-
         var barra = new Panel
         {
             Dock = DockStyle.Bottom,
@@ -142,8 +201,8 @@ internal static class PdvTheme
                 Location = new Point(x, 3),
                 Size = new Size(largura - 6, 40),
                 FlatStyle = FlatStyle.Flat,
-                ForeColor = tecla.Habilitada ? TextoClaro : Color.FromArgb(120, 132, 150),
-                BackColor = tecla.Habilitada ? BarraEscuraClara : BarraEscura,
+                ForeColor = tecla.Habilitada ? TextoClaro : Color.FromArgb(140, 152, 165),
+                BackColor = BarraEscura,
                 Font = new Font("Segoe UI", 7.5f),
                 Enabled = tecla.Habilitada,
                 Image = CriarSeloFKey(tecla.Numero, tecla.Habilitada),
@@ -152,12 +211,11 @@ internal static class PdvTheme
                 Cursor = tecla.Habilitada ? Cursors.Hand : Cursors.Default,
             };
             botao.FlatAppearance.BorderSize = 0;
-            AplicarCantosArredondados(botao, 8);
 
             if (tecla.Habilitada)
             {
                 botao.MouseEnter += (_, _) => botao.BackColor = Accent;
-                botao.MouseLeave += (_, _) => botao.BackColor = BarraEscuraClara;
+                botao.MouseLeave += (_, _) => botao.BackColor = BarraEscura;
             }
 
             if (tecla.Acao is not null)
@@ -166,8 +224,6 @@ internal static class PdvTheme
             barra.Controls.Add(botao);
             x += largura;
         }
-
-        container.Controls.Add(barra);
 
         form.KeyPreview = true;
         form.KeyDown += (_, e) =>
@@ -188,7 +244,7 @@ internal static class PdvTheme
             tecla.Acao!(form, EventArgs.Empty);
         };
 
-        return container;
+        return barra;
     }
 
     /// <summary>

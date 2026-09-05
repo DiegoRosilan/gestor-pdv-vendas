@@ -380,28 +380,32 @@ public sealed class Database
         return result;
     }
 
-    /// <summary>Última venda finalizada no movimento atual (exibida na tela Menu Fiscal). Usa as mesmas colunas já gravadas por FinalizarVendaAsync.</summary>
-    public async Task<UltimaVendaInfo?> GetUltimaVendaDoMovimentoAsync(int idMovimento, CancellationToken ct)
+    /// <summary>Todas as notas (vendas finalizadas) do movimento atual, mais recente primeiro — exibidas no Menu Fiscal (F8). Usa as mesmas colunas já gravadas por FinalizarVendaAsync.</summary>
+    public async Task<List<NotaEmitidaInfo>> GetNotasEmitidasAsync(int idMovimento, CancellationToken ct)
     {
         await using var cn = await OpenAsync(ct);
         const string sql = """
         SELECT id, coo, data_venda, hora_venda, valor_final, status_venda
         FROM public.ecf_venda_cabecalho
         WHERE id_ecf_movimento = @idMovimento
-        ORDER BY id DESC LIMIT 1;
+        ORDER BY id DESC;
         """;
         await using var cmd = new NpgsqlCommand(sql, cn);
         cmd.Parameters.AddWithValue("idMovimento", idMovimento);
         await using var rd = await cmd.ExecuteReaderAsync(ct);
-        if (!await rd.ReadAsync(ct)) return null;
 
-        return new UltimaVendaInfo(
-            rd.GetInt32(0),
-            rd.IsDBNull(1) ? 0 : rd.GetInt32(1),
-            rd.GetDateTime(2),
-            rd.IsDBNull(3) ? null : rd.GetString(3),
-            rd.IsDBNull(4) ? 0m : rd.GetDecimal(4),
-            rd.IsDBNull(5) ? "" : rd.GetString(5));
+        var result = new List<NotaEmitidaInfo>();
+        while (await rd.ReadAsync(ct))
+        {
+            result.Add(new NotaEmitidaInfo(
+                rd.GetInt32(0),
+                rd.IsDBNull(1) ? 0 : rd.GetInt32(1),
+                rd.GetDateTime(2),
+                rd.IsDBNull(3) ? null : rd.GetString(3),
+                rd.IsDBNull(4) ? 0m : rd.GetDecimal(4),
+                rd.IsDBNull(5) ? "" : rd.GetString(5)));
+        }
+        return result;
     }
 
     /// <summary>
@@ -430,9 +434,12 @@ public sealed class Database
         await using var cn = await OpenAsync(ct);
         await using var tx = await cn.BeginTransactionAsync(ct);
 
-        var subtotal = itens.Sum(i => i.Quantidade * i.ValorUnitario);
-        var descontoTotal = itens.Sum(i => i.Desconto) + descontoGeral;
-        var total = Math.Max(0m, itens.Sum(i => i.Total) - descontoGeral + acrescimoGeral);
+        // Itens cancelados (F5 na tela de venda) ficam gravados — pra manter o
+        // histórico do cupom — mas não entram nos totais nem na baixa de estoque.
+        var itensValidos = itens.Where(i => !i.Cancelado).ToList();
+        var subtotal = itensValidos.Sum(i => i.Quantidade * i.ValorUnitario);
+        var descontoTotal = itensValidos.Sum(i => i.Desconto) + descontoGeral;
+        var total = Math.Max(0m, itensValidos.Sum(i => i.Total) - descontoGeral + acrescimoGeral);
         var recebido = pagamentos.Sum(p => p.Valor);
 
         int nextCoo;
@@ -484,7 +491,7 @@ public sealed class Database
         VALUES
             (@idProduto, @idVenda, 5102, @item,
              @quantidade, @valorUnitario, @valorTotal, @totalItem, @desconto,
-             'N', 'S', to_char(now(), 'HH24:MI:SS'));
+             @cancelado, @movimentaEstoque, to_char(now(), 'HH24:MI:SS'));
         """;
         const string sqlEstoque = "UPDATE public.produto SET qtd_estoque = qtd_estoque - @qtd WHERE id = @id;";
 
@@ -503,11 +510,14 @@ public sealed class Database
                 cmd.Parameters.AddWithValue("valorTotal", valorTotalBruto);
                 cmd.Parameters.AddWithValue("totalItem", item.Total);
                 cmd.Parameters.AddWithValue("desconto", item.Desconto);
+                cmd.Parameters.AddWithValue("cancelado", item.Cancelado ? "S" : "N");
+                cmd.Parameters.AddWithValue("movimentaEstoque", item.Cancelado ? "N" : "S");
                 await cmd.ExecuteNonQueryAsync(ct);
             }
 
-            await using (var cmd = new NpgsqlCommand(sqlEstoque, cn, tx))
+            if (!item.Cancelado)
             {
+                await using var cmd = new NpgsqlCommand(sqlEstoque, cn, tx);
                 cmd.Parameters.AddWithValue("qtd", item.Quantidade);
                 cmd.Parameters.AddWithValue("id", item.Produto.Id);
                 await cmd.ExecuteNonQueryAsync(ct);

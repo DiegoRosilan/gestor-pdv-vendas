@@ -1,7 +1,58 @@
-GestorPDV.Vendas - Réplica da Tela de Venda (quarta versão — visual moderno)
+GestorPDV.Vendas - Réplica da Tela de Venda (quinta versão)
 ==============================================================================
 
-O QUE MUDOU NESTA VERSÃO (RODADA 4)
+O QUE MUDOU NESTA VERSÃO (RODADA 5)
+---------------------------------------
+Você mandou um print da tela de vendas do sistema ORIGINAL (o de verdade,
+da ADSoftwares) e pediu pra bater exatamente com ele, mais três mudanças
+de comportamento:
+
+1. LAYOUT DA TELA DE VENDA IGUAL AO PRINT: refiz a VendaForm do zero
+   (1365x767, do tamanho do print) seguindo a mesma disposição: cabeçalho
+   alto com o selo "PDV" + título "GestorPDV" no topo; grid de itens
+   ocupando a metade esquerda, com "Total R$:" logo abaixo dele; metade
+   direita com a marca da empresa centralizada e, abaixo, os campos
+   Código/Descrição (largura total), Quantidade e Valor Unitário lado a
+   lado, e Valor Total embaixo do Valor Unitário (não mais os três num
+   grupo só); barra de status agora em DUAS linhas (hora/terminal/
+   operador + indicador "OFF" numa linha, turno/versão na outra) e barra
+   F1-F12 sem caixinha de fundo nos botões — só o círculo "F1" e o texto,
+   igual ao original. A cor de fundo das barras também mudou pro tom
+   verde-azulado (teal) do print, em vez do azul-marinho da rodada
+   anterior.
+   IMPORTANTE: a logo "ADSoftwares" no centro é só TEXTO (não tenho o
+   arquivo de imagem da logo real) — mande o PNG que eu troco.
+   Como não consigo rodar o WinForms aqui, validei a matemática de cada
+   posição/tamanho manualmente (sem sobreposição entre painéis) mas não é
+   garantia de bater pixel a pixel — pode precisar de ajuste fino depois
+   de rodar de verdade no Windows.
+
+2. ITEM CANCELADO FICA NA TELA: F5 (Cancela Item) não remove mais a linha
+   do grid — agora marca o item como cancelado (ItemCarrinho.Cancelado):
+   a linha fica tachada, ganha uma tag "CANCELADO" em vermelho na coluna
+   Situação, e o valor dela some do "Total R$:" e do total levado pra
+   tela de Fecha Venda. Ao finalizar a venda, o item cancelado ainda é
+   gravado em ecf_venda_detalhe (histórico do cupom) com cancelado='S' e
+   movimenta_estoque='N' (não baixa estoque) — a coluna "cancelado" já
+   existia na tabela, não precisei criar nada novo no banco.
+   Um item cancelado não pode mais ser editado (duplo clique não abre a
+   tela de ajuste); só dá pra cancelar itens ainda ativos.
+
+3. F1 (OPÇÕES) E F8 (MENU FISCAL) TROCARAM DE PAPEL: a configuração do
+   modo de emissão fiscal (Nenhum/Homologação/Produção) que estava no
+   Menu Fiscal (F8) foi pra F1 - Opções > Configurações (telas novas:
+   OpcoesMenuForm e ConfiguracoesForm). F8 agora mostra a lista de TODAS
+   as notas (vendas finalizadas) do movimento atual — COO, data/hora,
+   valor e situação — em vez de só a última. Continua sem falar com
+   SEFAZ/SAT de verdade em nenhuma das duas telas.
+
+4. NOVO: editar quantidade/desconto de um item já lançado agora é por
+   duplo clique na linha do grid (abre uma caixinha "Editar item"), já
+   que a área fixa de ajuste que existia do lado dos campos de entrada
+   não cabia mais no layout novo (o print de referência não mostra essa
+   área).
+
+O QUE MUDOU NA RODADA 4 (visual moderno anterior a este print)
 ---------------------------------------
 Esta rodada não muda nenhuma regra de negócio das telas já existentes — só
 o visual, mais a nova tela de Menu Fiscal:
@@ -85,14 +136,18 @@ TELAS DESTA VERSÃO
    contra ecf_funcionario.senha de algum funcionário com gerente='S').
 
 3. VendaForm (tela principal): código/descrição do produto, caixas de
-   leitura Quantidade/Valor Unitário/Valor Total, grid de itens, e a barra
-   F1-F12 (Opções, Produtos, Fecha Venda, Cancela Venda, Cancela Item,
-   Preços, Clientes, Menu Fiscal, Pré-Venda, Orçamento, Vendedor, Sair).
-   SÓ FUNCIONAM DE VERDADE: F2 (buscar produto), F3 (fechar venda), F4
-   (cancelar venda em andamento), F5 (cancelar item selecionado), F7
-   (identificar cliente), F8 (Menu Fiscal — ver Rodada 4 acima) e F12
-   (sair — pergunta se quer encerrar o turno antes). As outras (F1, F6,
-   F9, F10, F11) aparecem na barra pra bater visualmente com o sistema
+   leitura Quantidade/Valor Unitário/Valor Total, grid de itens (com
+   "Total R$:" logo abaixo), e a barra F1-F12 (Opções, Produtos, Fecha
+   Venda, Cancela Cupom, Cancela Item, Preços, Clientes, Menu Fiscal,
+   Pré-Venda, Orçamento, Vendedor, Sair) — layout igual ao print do
+   sistema original (ver Rodada 5 acima).
+   FUNCIONAM DE VERDADE: F1 (Opções > Configurações), F2 (buscar
+   produto — ou duplo clique numa linha do grid pra editar
+   quantidade/desconto do item), F3 (fechar venda), F4 (cancelar cupom em
+   andamento), F5 (cancelar item selecionado — fica na tela, tachado), F7
+   (identificar cliente), F8 (Menu Fiscal — lista de notas emitidas) e F12
+   (sair — pergunta se quer encerrar o turno antes). As outras (F6, F9,
+   F10, F11) aparecem na barra pra bater visualmente com o sistema
    original, mas ainda não fazem nada.
 
 4. FechaVendaForm ("F3 - Selecione o Desconto/Acréscimo..."): permite
@@ -132,16 +187,19 @@ SIMPLIFICAÇÕES E LIMITAÇÕES ASSUMIDAS (deixadas de propósito nesta versão)
 -----------------------------------------------------------------------------
 - Sem cálculo fiscal (ICMS/PIS/COFINS/IBS/CBS etc.) — CFOP fixo em 5102;
 - Sem emissão real de NFC-e/SAT — impressora do movimento fixada em
-  "NENHUM"; o Menu Fiscal (F8) só configura o modo pretendido e mostra
-  status, não transmite nada (ver seção da Rodada 4 acima);
+  "NENHUM"; F1 - Opções > Configurações só guarda o modo pretendido, não
+  transmite nada (ver Rodada 5 acima);
 - COO é um número sequencial próprio (maior já usado +1), não fiscal;
 - Sem cadastro de produto/cliente novo direto da tela (só busca os já
   cadastrados);
-- Sem estorno de venda já finalizada;
+- Sem estorno de venda já finalizada (cancelamento só vale pra item ainda
+  dentro do cupom em andamento, antes de finalizar — F5);
 - Sem comparação entre o valor declarado no fechamento de caixa e o total
   real do sistema (fica pra um relatório de conferência à parte);
-- F1 (Opções), F6 (Preços), F9 (Pré-Venda), F10 (Orçamento) e F11
-  (Vendedor) aparecem na barra mas não fazem nada ainda;
+- A logo "ADSoftwares" na tela de venda é texto, não a imagem real da
+  marca (não tenho o arquivo);
+- F6 (Preços), F9 (Pré-Venda), F10 (Orçamento) e F11 (Vendedor) aparecem
+  na barra mas não fazem nada ainda;
 - O campo "Local armazenado do Arquivo: ArquivoMD5.txt" do print de login
   original (cache de credencial em arquivo local) não foi replicado — é
   um detalhe de infraestrutura do sistema Delphi, não uma regra de
@@ -149,18 +207,21 @@ SIMPLIFICAÇÕES E LIMITAÇÕES ASSUMIDAS (deixadas de propósito nesta versão)
 
 IMPORTANTE — TESTE ANTES DE USAR NO BANCO REAL
 -------------------------------------------------
-Continua valendo o aviso da versão anterior: teste numa base restaurada de
-TESTE antes de apontar para o banco de produção. Nesta rodada eu não tive
-acesso a nenhum banco (nem de teste, nem restaurado) neste ambiente — ao
-contrário da rodada anterior, cujo LEIA-ME registra consultas validadas
-contra um backup restaurado, essas validações não foram repetidas agora.
-A única consulta nova (status na tela Menu Fiscal, em Database.cs) reusa
-exatamente as mesmas colunas de ecf_venda_cabecalho que a tela de venda já
-grava e que estavam validadas — risco baixo, mas não testada de fato. Além
-disso, continuo sem conseguir compilar/rodar o WinForms de verdade neste
-ambiente (sem Windows, sem SDK do .NET disponível aqui). Revise o código
-(principalmente MenuFiscalForm.cs e o novo método GetUltimaVendaDoMovimentoAsync
-em Database.cs) e rode um "dotnet build" no Windows antes de usar.
+Continua valendo o aviso das versões anteriores: teste numa base restaurada
+de TESTE antes de apontar para o banco de produção. Nesta rodada eu de novo
+não tive acesso a nenhum banco (nem de teste) neste ambiente — a consulta
+nova (GetNotasEmitidasAsync, em Database.cs) reusa as mesmas colunas de
+ecf_venda_cabecalho já validadas antes; a mudança em FinalizarVendaAsync
+(itens cancelados) só passou a preencher com valor de verdade duas colunas
+que já existiam na tabela (cancelado/movimenta_estoque) e antes eram
+gravadas fixas — risco baixo, mas não testado de fato.
+Também continuo sem conseguir compilar/rodar o WinForms de verdade neste
+ambiente (sem Windows, sem SDK do .NET disponível, e a instalação do SDK
+é bloqueada pela política de rede desta sessão). O layout novo da tela de
+venda (VendaForm.cs) foi todo calculado manualmente — conferi as contas de
+posição/tamanho pra nenhum painel encavalar outro, mas isso não substitui
+ver rodando de verdade. Rode um "dotnet build" no Windows e me manda
+qualquer erro ou desalinhamento que aparecer — eu ajusto.
 
 COMO RODAR
 ------------

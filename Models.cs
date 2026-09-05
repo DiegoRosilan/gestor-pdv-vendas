@@ -27,8 +27,8 @@ public sealed record Cliente(int Id, string? CodCliente, string Nome, string? Cp
 
 public sealed record FormaPagamento(int Id, string Descricao, bool GeraParcelas);
 
-/// <summary>Resumo da última venda finalizada no movimento atual, exibido na tela Menu Fiscal (F8).</summary>
-public sealed record UltimaVendaInfo(int Id, int Coo, DateTime DataVenda, string? HoraVenda, decimal ValorFinal, string StatusVenda);
+/// <summary>Uma nota (venda finalizada) do movimento atual, exibida na lista de notas emitidas do Menu Fiscal (F8).</summary>
+public sealed record NotaEmitidaInfo(int Id, int Coo, DateTime DataVenda, string? HoraVenda, decimal ValorFinal, string StatusVenda);
 
 /// <summary>Um item já lançado no carrinho da venda em andamento.</summary>
 public sealed class ItemCarrinho
@@ -37,6 +37,14 @@ public sealed class ItemCarrinho
     public decimal Quantidade { get; set; } = 1;
     public decimal ValorUnitario { get; set; }
     public decimal Desconto { get; set; }
+
+    /// <summary>
+    /// Item cancelado (F5) permanece na tela com uma tarja "CANCELADO" e
+    /// tachado, mas some do total da venda e não baixa estoque — igual ao
+    /// comportamento do sistema original (coluna "cancelado" em
+    /// ecf_venda_detalhe já existia pra isso).
+    /// </summary>
+    public bool Cancelado { get; set; }
 
     public decimal Total => Math.Max(0m, (Quantidade * ValorUnitario) - Desconto);
 }
