@@ -30,6 +30,15 @@ internal static class Program
         var app = new App();
         app.InitializeComponent();
 
+        // Padrão do WPF é ShutdownMode.OnLastWindowClose: desliga o
+        // Application sozinho assim que a última janela aberta fecha. Como
+        // a LoginView é a primeira (e, até aqui, única) janela mostrada,
+        // fechá-la — mesmo com login confirmado — desligaria o app inteiro
+        // ANTES da MainView ser criada (saía silencioso, código 0, sem
+        // nenhuma janela principal). Trocado de volta pra OnLastWindowClose
+        // só depois, logo antes do app.Run(mainView).
+        app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         IConfiguration configuration;
         ServiceProvider provider;
         try
@@ -92,6 +101,8 @@ internal static class Program
         var mainViewModel = new MainViewModel(vendaViewModel);
         var mainView = new MainView(mainViewModel, vendaView);
 
+        // A partir daqui a MainView é a única janela que deve existir — agora sim fechar ela deve encerrar o app.
+        app.ShutdownMode = ShutdownMode.OnLastWindowClose;
         app.Run(mainView);
     }
 
