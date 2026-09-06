@@ -48,8 +48,8 @@ ainda não é uma reescrita completa do legado. Faltando, entre outras
 coisas:
 
 - Tela de abertura de turno (WPF) — hoje, sem turno já aberto no banco,
-  o app avisa e sai (`Program.cs`); a lógica existe em `CaixaService`,
-  só falta a View.
+  o app avisa e sai (`App.xaml.cs`, método `OnStartup`); a lógica existe
+  em `CaixaService`, só falta a View.
 - Identificar cliente (F7), Menu Fiscal (F8), Opções/Configurações (F1) —
   sem View WPF ainda (`Views/Clientes`, `Views/Configuracoes` vazias);
   o equivalente funcional existe no legado.
@@ -66,8 +66,10 @@ coisas:
 Nada disso foi compilado nem rodado de verdade — este ambiente não tem
 Windows nem o SDK do .NET disponível (instalação bloqueada pela rede da
 sessão). Toda a estrutura (`.sln`, `.csproj`, bindings XAML, DI em
-`Program.cs`) foi revisada manualmente, mas só um `dotnet build` real no
-Windows confirma que compila.
+`App.xaml.cs`) foi revisada manualmente, mas só um `dotnet build` real no
+Windows confirma que compila — e essa revisão manual já errou antes (ver
+histórico de commits): trate qualquer erro de build como esperado até
+confirmarmos juntos que compilou limpo.
 
 ## legacy/GestorPDV.Vendas
 

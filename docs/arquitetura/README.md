@@ -6,7 +6,7 @@ Clean Architecture em 4 camadas (`src/`):
 GestorPDV.Domain          -> sem dependências (entidades, regras, value objects)
 GestorPDV.Application     -> depende só de Domain (casos de uso, interfaces, DTOs)
 GestorPDV.Infrastructure  -> depende de Application+Domain (Npgsql, impressão, relatórios)
-GestorPDV.App (WPF)       -> depende de tudo (composição/DI em Program.cs)
+GestorPDV.App (WPF)       -> depende de tudo (composição/DI em App.xaml.cs, OnStartup)
 GestorPDV.Monitor         -> depende de tudo (serviço à parte, sem UI)
 ```
 
