@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GestorPDV.Application</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Casos de uso e serviços de aplicação: orquestra as regras do Domain,
+    define os contratos (Interfaces/) que a Infrastructure implementa
+    (inversão de dependência — Application nunca referencia
+    Infrastructure). Sem acesso a banco/WPF aqui.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\GestorPDV.Domain\GestorPDV.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

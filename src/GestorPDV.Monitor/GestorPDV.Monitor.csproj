@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GestorPDV.Monitor</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Serviço à parte (console/worker), sem UI — igual ao papel do
+    GestorPDV.Monitor mencionado no legacy/GestorPDV.Vendas: observa a
+    fila de impressão e processa vendas fechadas em segundo plano,
+    independente do PDV estar aberto.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\GestorPDV.Application\GestorPDV.Application.csproj" />
+    <ProjectReference Include="..\GestorPDV.Domain\GestorPDV.Domain.csproj" />
+    <ProjectReference Include="..\GestorPDV.Infrastructure\GestorPDV.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

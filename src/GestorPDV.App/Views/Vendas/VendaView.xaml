@@ -1,0 +1,86 @@
+<UserControl x:Class="GestorPDV.App.Views.Vendas.VendaView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource PincelFundoClaro}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Código/Descrição do Produto (Enter chama AdicionarPorCodigoCommand no code-behind, ver KeyDown) -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock DockPanel.Dock="Top" Text="Código/Descrição do Produto:" Margin="0,0,0,4" />
+            <TextBox x:Name="CaixaCodigo" Text="{Binding Codigo, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="8" FontSize="14" KeyDown="CaixaCodigo_KeyDown" />
+        </DockPanel>
+
+        <!-- Grid de itens — Cancelado tachado + tarja "CANCELADO", igual ao WinForms legado -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Itens}" SelectedItem="{Binding ItemSelecionado}"
+                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                  SelectionMode="Single" SelectionUnit="FullRow" Background="White"
+                  RowBackground="White" GridLinesVisibility="Horizontal">
+            <DataGrid.Resources>
+                <!--
+                    ElementStyle (não um Style de DataGridRow) porque
+                    TextDecorations não é uma propriedade herdada — só
+                    assim ela chega no TextBlock que a coluna gera pra
+                    exibir cada célula.
+                -->
+                <Style x:Key="CelulaTachadaSeCancelado" TargetType="TextBlock">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Cancelado}" Value="True">
+                            <Setter Property="TextDecorations" Value="Strikethrough" />
+                            <Setter Property="Foreground" Value="{StaticResource PincelTextoSecundario}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Item" Binding="{Binding NumeroItem}" Width="50" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTextColumn Header="Descrição" Binding="{Binding Descricao}" Width="*" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTextColumn Header="Qtde" Binding="{Binding Quantidade}" Width="70" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTextColumn Header="Unitário" Binding="{Binding ValorUnitario, StringFormat=N2}" Width="80" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTextColumn Header="Desconto" Binding="{Binding Desconto, StringFormat=N2}" Width="80" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=N2}" Width="90" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
+                <DataGridTemplateColumn Header="Situação" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="CANCELADO" Foreground="{StaticResource PincelPerigo}" FontWeight="Bold" Visibility="Collapsed">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Cancelado}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="2" Text="{Binding Mensagem}" Foreground="{StaticResource PincelPerigo}" Margin="0,8,0,0" />
+
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding TotalGeral, StringFormat='Total R$: {0}'}" FontSize="20" FontWeight="Bold"
+                       VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="F3 Fecha Venda" Style="{StaticResource BotaoPrimario}" Margin="4,0" Click="FecharVenda_Click" />
+                <Button Content="F4 Cancela Cupom" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarCupomCommand}" />
+                <Button Content="F5 Cancela Item" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarItemCommand}" />
+                <Button Content="F2 Produtos" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirBuscaProduto_Click" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -2,3 +2,7 @@ bin/
 obj/
 .vs/
 *.user
+*.suo
+.idea/
+*.userosscache
+*.sln.docstates

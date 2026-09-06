@@ -1,0 +1,39 @@
+<Window x:Class="GestorPDV.App.Views.Produtos.ConsultaProdutosView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Buscar produto"
+        Width="520" Height="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource PincelFundoClaro}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <Button DockPanel.Dock="Right" Content="Buscar" Style="{StaticResource BotaoSecundario}"
+                    Command="{Binding BuscarCommand}" Width="90" Margin="8,0,0,0" />
+            <TextBox Text="{Binding Termo, UpdateSourceTrigger=PropertyChanged}" Padding="6" KeyDown="Termo_KeyDown" />
+        </DockPanel>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Resultados}" SelectedItem="{Binding ProdutoSelecionado}"
+                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                  SelectionMode="Single" SelectionUnit="FullRow" Background="White"
+                  MouseDoubleClick="Resultados_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="90" />
+                <DataGridTextColumn Header="Nome" Binding="{Binding Nome}" Width="*" />
+                <DataGridTextColumn Header="Valor" Binding="{Binding ValorVenda, StringFormat=N2}" Width="90" />
+                <DataGridTextColumn Header="Estoque" Binding="{Binding QtdEstoque}" Width="80" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Cancelar" Style="{StaticResource BotaoSecundario}" Width="100" Margin="0,0,8,0" Click="Cancelar_Click" />
+            <Button Content="Selecionar" Style="{StaticResource BotaoPrimario}" Width="100" Click="Selecionar_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

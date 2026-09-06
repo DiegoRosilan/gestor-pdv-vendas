@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GestorPDV.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Camada mais interna da Clean Architecture: entidades, enums, value
+    objects e regras de negócio puras. Não referencia nenhum outro
+    projeto nem pacote externo (nem Npgsql, nem WPF) — quem depende do
+    Domain é a Application, nunca o contrário.
+  -->
+
+</Project>

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GestorPDV.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Implementações concretas dos contratos definidos em
+    GestorPDV.Application/Interfaces: acesso a banco (Npgsql/PostgreSQL,
+    o mesmo schema do GestorPDV original em legacy/GestorPDV.Vendas),
+    impressão e emissão de relatórios (FastReport). Nada de UI aqui.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GestorPDV.Application\GestorPDV.Application.csproj" />
+    <ProjectReference Include="..\GestorPDV.Domain\GestorPDV.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

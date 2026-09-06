@@ -1,0 +1,1 @@
+# Ícones dos botões (F1-F12, busca, etc.) — nenhum ainda; o WinForms legado desenha em GDI+ (ver legacy/GestorPDV.Vendas/ButtonIcons.cs) como referência de estilo.

@@ -1,0 +1,22 @@
+<Window x:Class="GestorPDV.App.Views.Principal.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GestorPDV"
+        Width="1200" Height="800"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource PincelBarraEscura}">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="{StaticResource PincelBarraEscura}" Padding="16,10">
+            <TextBlock Text="GestorPDV" Foreground="White" FontSize="16" FontWeight="Bold" />
+        </Border>
+
+        <!--
+            Conteúdo real (VendaView) é atribuído no code-behind: ela
+            precisa de dependências injetadas no construtor (VendaService,
+            ProdutoService) que um DataTemplate/binding puro não consegue
+            resolver sem um localizador de serviço — mais simples deixar
+            o Program.cs (que já monta a DI) entregar a instância pronta.
+        -->
+        <ContentControl x:Name="ConteudoPrincipal" />
+    </DockPanel>
+</Window>
