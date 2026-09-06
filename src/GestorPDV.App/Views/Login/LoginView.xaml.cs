@@ -26,4 +26,10 @@ public partial class LoginView : Window
         if (DataContext is LoginViewModel viewModel)
             viewModel.Senha = CaixaSenha.Password;
     }
+
+    private void Cancelar_Click(object sender, RoutedEventArgs e)
+    {
+        DialogResult = false;
+        Close();
+    }
 }
