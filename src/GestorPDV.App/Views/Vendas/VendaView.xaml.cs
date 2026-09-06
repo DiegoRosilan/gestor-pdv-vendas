@@ -50,4 +50,29 @@ public partial class VendaView : UserControl
         var janela = new FechamentoVendaView(fechamentoViewModel) { Owner = Window.GetWindow(this) };
         janela.ShowDialog();
     }
+
+    private void VendaView_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.F1) return;
+        PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
+        e.Handled = true;
+    }
+
+    private void AbrirMenuOpcoes_Click(object sender, RoutedEventArgs e)
+    {
+        PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
+    }
+
+    // Nenhuma das opções do menu F1 tem caso de uso implementado nesta
+    // arquitetura ainda (mesma situação dos stubs em GestorPDV.Infrastructure)
+    // — só avisa, em vez de fingir que a ação foi executada.
+    private void OpcaoMenu_Click(object sender, RoutedEventArgs e)
+    {
+        PopupOpcoes.IsOpen = false;
+        if (sender is not Button botao || botao.Tag is not string nomeOpcao) return;
+
+        MessageBox.Show(
+            $"\"{nomeOpcao}\" ainda não foi portado pra esta versão WPF.",
+            "GestorPDV", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
 }

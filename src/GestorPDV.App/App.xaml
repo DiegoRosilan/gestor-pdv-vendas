@@ -2,10 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!--
-        Build Action = Page (não ApplicationDefinition, ver .csproj) —
-        o ponto de entrada é Program.Main, que monta a DI, resolve a
-        LoginView e só depois mostra a MainView. App.xaml aqui só carrega
-        os dicionários de recurso compartilhados.
+        ApplicationDefinition padrão, sem StartupUri — o Main() é gerado
+        automaticamente pelo compilador de XAML e chama OnStartup
+        (App.xaml.cs), que monta a DI, resolve a LoginView e só depois
+        mostra a MainView. App.xaml aqui só carrega os dicionários de
+        recurso compartilhados.
     -->
     <Application.Resources>
         <ResourceDictionary>

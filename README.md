@@ -50,9 +50,12 @@ coisas:
 - Tela de abertura de turno (WPF) — hoje, sem turno já aberto no banco,
   o app avisa e sai (`App.xaml.cs`, método `OnStartup`); a lógica existe
   em `CaixaService`, só falta a View.
-- Identificar cliente (F7), Menu Fiscal (F8), Opções/Configurações (F1) —
-  sem View WPF ainda (`Views/Clientes`, `Views/Configuracoes` vazias);
-  o equivalente funcional existe no legado.
+- Identificar cliente (F7) e Menu Fiscal (F8) — sem View WPF ainda
+  (`Views/Clientes`, `Views/Configuracoes` vazias); o equivalente
+  funcional existe no legado. O flyout F1 Opções (`VendaView.xaml`) já
+  existe com a mesma listagem/layout do sistema de referência, mas cada
+  item só mostra um aviso de "ainda não portado" ao clicar — nenhum caso
+  de uso por trás deles foi implementado nesta arquitetura ainda.
 - Impressão e relatórios (FastReport) — interfaces prontas
   (`IImpressaoService`, `IRelatorioService`), implementações são
   stubs que lançam `NotImplementedException` de propósito, com o motivo

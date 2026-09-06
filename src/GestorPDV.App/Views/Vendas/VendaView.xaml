@@ -1,8 +1,10 @@
 <UserControl x:Class="GestorPDV.App.Views.Vendas.VendaView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="{StaticResource PincelFundoClaro}">
-    <Grid Margin="16">
+             Background="{StaticResource PincelFundoClaro}"
+             Focusable="True"
+             KeyDown="VendaView_KeyDown">
+    <Grid x:Name="GradeRaiz" Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -76,11 +78,214 @@
             <TextBlock Text="{Binding TotalGeral, StringFormat='Total R$: {0}'}" FontSize="20" FontWeight="Bold"
                        VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="BotaoF1Opcoes" Content="F1 Opções" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirMenuOpcoes_Click" />
+                <Button Content="F2 Produtos" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirBuscaProduto_Click" />
                 <Button Content="F3 Fecha Venda" Style="{StaticResource BotaoPrimario}" Margin="4,0" Click="FecharVenda_Click" />
                 <Button Content="F4 Cancela Cupom" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarCupomCommand}" />
                 <Button Content="F5 Cancela Item" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarItemCommand}" />
-                <Button Content="F2 Produtos" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirBuscaProduto_Click" />
             </StackPanel>
         </Grid>
+
+        <!--
+            Flyout F1 Opções — mesma listagem do PDV Delphi original (ver
+            captura enviada), reproduzida aqui item a item: ícone + rótulo
+            + atalho (ou seta "›" pra quem abre submenu). Ancorado na
+            GradeRaiz com offset negativo igual à Margem desta Grid (16)
+            pra encostar no canto esquerdo, logo abaixo da barra escura de
+            título (que é da MainView, fora desta UserControl) — mesma
+            posição/tamanho da referência. Itens só mostram um aviso
+            "ainda não portado" ao clicar (ver OpcaoMenu_Click): nenhuma
+            das 15 funções tem caso de uso implementado nesta arquitetura
+            ainda, mesma situação dos stubs em GestorPDV.Infrastructure.
+        -->
+        <Popup x:Name="PopupOpcoes" PlacementTarget="{Binding ElementName=GradeRaiz}" Placement="Relative"
+               HorizontalOffset="-16" VerticalOffset="-16" StaysOpen="False" AllowsTransparency="True"
+               PopupAnimation="Fade">
+            <Border Width="340" Height="620" Background="White" BorderBrush="{StaticResource PincelBorda}"
+                    BorderThickness="0,0,1,1" CornerRadius="0,0,8,0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.25" />
+                </Border.Effect>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Iniciar Movimento/Turno">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Iniciar Movimento/Turno" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Ctrl+I" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Encerrar Movimento/Turno">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Encerrar Movimento/Turno" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Ctrl+F" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Sangria">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Sangria" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Lista de Sangrias Emitidas">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Lista de Sangrias Emitidas" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Suprimento">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Suprimento" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Configurações do Caixa">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Configurações do Caixa" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Ctrl+C" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Saída Temporária do Caixa">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Saída Temporária do Caixa" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Listagem de Recuperação de Venda">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Listagem de Recuperação de Venda" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Colocar a Venda Atual Como Pendente">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Colocar a Venda Atual Como Pendente" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Ctrl+P" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Troca de Produtos">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Troca de Produtos" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Alt+T" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Delivery">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Delivery" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Ins" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Importação de Kit de Produto">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Importação de Kit de Produto" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Ctrl+K" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Tabela de Preço">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Tabela de Preço" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="Alt+P" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Funções">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Funções" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="›" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource ItemMenuF1}" Click="OpcaoMenu_Click" Tag="Importação/Exportação de Arquivos">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0" Width="10" Height="10" Fill="{StaticResource PincelAccent}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="Importação/Exportação de Arquivos" Margin="8,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoPrimario}" />
+                                <TextBlock Grid.Column="2" Text="›" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource PincelTextoSecundario}" />
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Popup>
     </Grid>
 </UserControl>
