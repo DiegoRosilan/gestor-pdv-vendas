@@ -50,6 +50,9 @@ public sealed class VendaViewModel : ViewModelBase
     /// <summary>Exposto pra FechamentoVendaViewModel/VendaView montarem o fechamento (F3) sem essa ViewModel precisar conhecer a tela de fechamento.</summary>
     public Venda VendaAtual => _venda;
 
+    /// <summary>Mesmo movimento em toda a vida da ViewModel (CancelarCupom preserva IdMovimento) — exposto pra VendaView montar o Menu Fiscal (F8).</summary>
+    public int IdMovimento => _venda.IdMovimento;
+
     private async Task AdicionarPorCodigoAsync()
     {
         Mensagem = "";

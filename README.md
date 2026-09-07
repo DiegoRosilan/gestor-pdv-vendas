@@ -47,12 +47,15 @@ rodar o fluxo de login → venda → fechamento contra um banco real — mas
 ainda não é uma reescrita completa do legado. Faltando, entre outras
 coisas:
 
-- Identificar cliente (F7) e Menu Fiscal (F8) — sem View WPF ainda
-  (`Views/Clientes`, `Views/Configuracoes` vazias); o equivalente
-  funcional existe no legado. O flyout F1 Opções (`VendaView.xaml`) já
-  existe com a mesma listagem/layout do sistema de referência, mas cada
-  item só mostra um aviso de "ainda não portado" ao clicar — nenhum caso
-  de uso por trás deles foi implementado nesta arquitetura ainda.
+- Identificar cliente (F7) e as configurações fiscais do F1 > Configurações
+  — sem View WPF ainda (`Views/Clientes`, `Views/Configuracoes` vazias);
+  o equivalente funcional existe no legado. O flyout F1 Opções
+  (`VendaView.xaml`) já existe com a mesma listagem/layout do sistema de
+  referência, mas cada item só mostra um aviso de "ainda não portado" ao
+  clicar — nenhum caso de uso por trás deles foi implementado nesta
+  arquitetura ainda. O Menu Fiscal (F8) já lista as notas emitidas do
+  movimento atual (`Views/Fiscal/MenuFiscalView.xaml`) — mesmo escopo do
+  legado, só mostra o que já está gravado, não emite nada de verdade.
 - Impressão e relatórios (FastReport) — interfaces prontas
   (`IImpressaoService`, `IRelatorioService`), implementações são
   stubs que lançam `NotImplementedException` de propósito, com o motivo

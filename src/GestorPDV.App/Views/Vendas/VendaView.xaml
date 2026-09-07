@@ -83,6 +83,7 @@
                 <Button Content="F3 Fecha Venda" Style="{StaticResource BotaoPrimario}" Margin="4,0" Click="FecharVenda_Click" />
                 <Button Content="F4 Cancela Cupom" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarCupomCommand}" />
                 <Button Content="F5 Cancela Item" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarItemCommand}" />
+                <Button Content="F8 Menu Fiscal" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirMenuFiscal_Click" />
             </StackPanel>
         </Grid>
 

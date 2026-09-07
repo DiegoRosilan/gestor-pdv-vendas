@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using GestorPDV.App.ViewModels;
+using GestorPDV.App.Views.Fiscal;
 using GestorPDV.App.Views.Produtos;
 using GestorPDV.Application.Services;
 
@@ -53,9 +54,26 @@ public partial class VendaView : UserControl
 
     private void VendaView_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.F1) return;
-        PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
-        e.Handled = true;
+        switch (e.Key)
+        {
+            case Key.F1:
+                PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
+                e.Handled = true;
+                break;
+            case Key.F8:
+                AbrirMenuFiscal();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void AbrirMenuFiscal_Click(object sender, RoutedEventArgs e) => AbrirMenuFiscal();
+
+    private void AbrirMenuFiscal()
+    {
+        var menuFiscalViewModel = new MenuFiscalViewModel(_vendaService, _viewModel.IdMovimento);
+        var janela = new MenuFiscalView(menuFiscalViewModel) { Owner = Window.GetWindow(this) };
+        janela.ShowDialog();
     }
 
     private void AbrirMenuOpcoes_Click(object sender, RoutedEventArgs e)
