@@ -46,13 +46,23 @@ public sealed class FechamentoVendaViewModel : ViewModelBase
     /// <summary>A View fecha o diálogo (DialogResult=true) quando isso disparar.</summary>
     public event EventHandler? VendaFinalizada;
 
-    /// <summary>Chamado pela View no OnLoaded, já que carregar formas de pagamento é assíncrono.</summary>
+    /// <summary>
+    /// Chamado pela View no OnLoaded, já que carregar formas de pagamento
+    /// é assíncrono. "Dinheiro" já vem selecionada e o valor já vem
+    /// preenchido com o total da venda — cobre o caso mais comum (venda à
+    /// vista, um pagamento só) sem exigir nenhum clique extra; o operador
+    /// só troca a forma/valor quando o pagamento for diferente disso.
+    /// </summary>
     public async Task CarregarFormasPagamentoAsync()
     {
         var formas = await _vendaService.GetFormasPagamentoAsync(CancellationToken.None);
         FormasDisponiveis.Clear();
         foreach (var forma in formas)
             FormasDisponiveis.Add(forma);
+
+        FormaSelecionada = FormasDisponiveis.FirstOrDefault(f => f.Descricao.Contains("dinheiro", StringComparison.OrdinalIgnoreCase))
+            ?? FormasDisponiveis.FirstOrDefault();
+        ValorPagamento = _venda.Total.Valor;
     }
 
     private void LancarPagamento()

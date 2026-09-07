@@ -1,0 +1,39 @@
+<Window x:Class="GestorPDV.App.Views.Autorizacao.SenhaGerenteView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GestorPDV - Autorização"
+        Width="380" Height="260"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource PincelFundoClaro}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{Binding Titulo}" FontSize="16" FontWeight="Bold"
+                   Foreground="{StaticResource PincelBarraEscura}" />
+
+        <TextBlock Grid.Row="2" Text="Requer autorização do gerente/supervisor." Margin="0,0,0,12"
+                   Foreground="{StaticResource PincelTextoSecundario}" />
+
+        <TextBlock Grid.Row="3" Text="Senha do gerente/supervisor:" Margin="0,0,0,4" />
+        <PasswordBox Grid.Row="4" x:Name="CaixaSenha" Padding="8" PasswordChanged="CaixaSenha_PasswordChanged" />
+
+        <TextBlock Grid.Row="5" Text="{Binding MensagemErro}" Foreground="{StaticResource PincelPerigo}"
+                   TextWrapping="Wrap" Margin="0,10,0,0" />
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancela (ESC)" Style="{StaticResource BotaoSecundario}"
+                    Width="120" Margin="0,0,8,0" Click="Cancelar_Click" IsCancel="True" />
+            <Button Content="Confirma (F12)" Style="{StaticResource BotaoPrimario}"
+                    Width="130" Command="{Binding ConfirmarCommand}" IsDefault="True" />
+        </StackPanel>
+    </Grid>
+</Window>

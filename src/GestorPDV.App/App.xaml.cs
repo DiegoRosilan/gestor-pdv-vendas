@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Windows;
+using System.Windows.Markup;
 using GestorPDV.App.ViewModels;
 using GestorPDV.App.Views.Caixa;
 using GestorPDV.App.Views.Login;
@@ -30,6 +32,22 @@ public partial class App : global::System.Windows.Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // O binding do WPF (conversão de texto <-> decimal em TextBox,
+        // formatação de StringFormat etc.) usa FrameworkElement.Language,
+        // que por padrão é "en-US" — INDEPENDENTE da cultura do Windows/SO
+        // (é uma pegadinha clássica do WPF). Sem isso, TextBox com
+        // separador decimal "," (padrão pt-BR, ex.: "15,25") é rejeitado
+        // pelo binding mesmo numa máquina configurada em português.
+        // OverrideMetadata precisa rodar antes de qualquer Window/Binding.
+        var culturaPtBr = new CultureInfo("pt-BR");
+        CultureInfo.CurrentCulture = culturaPtBr;
+        CultureInfo.CurrentUICulture = culturaPtBr;
+        CultureInfo.DefaultThreadCurrentCulture = culturaPtBr;
+        CultureInfo.DefaultThreadCurrentUICulture = culturaPtBr;
+        FrameworkElement.LanguageProperty.OverrideMetadata(
+            typeof(FrameworkElement),
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(culturaPtBr.IetfLanguageTag)));
 
         // Padrão do WPF é ShutdownMode.OnLastWindowClose: desliga o
         // Application sozinho assim que a última janela aberta fecha. Como
@@ -110,8 +128,9 @@ public partial class App : global::System.Windows.Application
 
         var vendaService = provider.GetRequiredService<VendaService>();
         var produtoService = provider.GetRequiredService<ProdutoService>();
-        var vendaViewModel = new VendaViewModel(vendaService, caixaService, idMovimento, funcionario.Id, idOperador, funcionario.Nome);
-        var vendaView = new VendaView(vendaViewModel, vendaService, produtoService);
+        var logoPath = configuration["LogoPath"];
+        var vendaViewModel = new VendaViewModel(vendaService, caixaService, idMovimento, funcionario.Id, idOperador, funcionario.Nome, logoPath);
+        var vendaView = new VendaView(vendaViewModel, vendaService, produtoService, funcionarios);
         var mainViewModel = new MainViewModel(vendaViewModel);
         var mainView = new MainView(mainViewModel, vendaView);
 

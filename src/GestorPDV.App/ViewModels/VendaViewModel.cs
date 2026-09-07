@@ -27,6 +27,7 @@ public sealed class VendaViewModel : ViewModelBase, IDisposable
     private readonly CaixaService _caixaService;
     private readonly string _nomeOperador;
     private readonly DispatcherTimer _relogio;
+    private readonly string? _logoPath;
 
     private Venda _venda;
     private string _codigo = "";
@@ -41,11 +42,12 @@ public sealed class VendaViewModel : ViewModelBase, IDisposable
     private string _terminal = "-";
     private string _turno = "-";
 
-    public VendaViewModel(VendaService vendaService, CaixaService caixaService, int idMovimento, int idFuncionario, int idOperador, string nomeOperador)
+    public VendaViewModel(VendaService vendaService, CaixaService caixaService, int idMovimento, int idFuncionario, int idOperador, string nomeOperador, string? logoPath = null)
     {
         _vendaService = vendaService;
         _caixaService = caixaService;
         _nomeOperador = nomeOperador;
+        _logoPath = logoPath;
         _venda = _vendaService.NovaVenda(idMovimento, idFuncionario, idOperador);
 
         AdicionarPorCodigoCommand = RelayCommand.CreateAsync(_ => AdicionarPorCodigoAsync(), _ => !string.IsNullOrWhiteSpace(Codigo));
@@ -88,9 +90,21 @@ public sealed class VendaViewModel : ViewModelBase, IDisposable
     /// <summary>Linha 2: turno + número do movimento.</summary>
     public string StatusLinha2 => $"Turno: {_turno}    Movimento nº {IdMovimento}";
 
+    /// <summary>
+    /// Logo institucional, configurável via appsettings.json ("LogoPath")
+    /// — futuramente trocável pela tela de Configurações (F1), ainda não
+    /// portada. Sem logo configurada, a VendaView mostra um texto de
+    /// marca-d'água no lugar (ver TemLogo).
+    /// </summary>
+    public string? LogoPath => _logoPath;
+    public bool TemLogo => !string.IsNullOrWhiteSpace(_logoPath) && File.Exists(_logoPath);
+
     public ICommand AdicionarPorCodigoCommand { get; }
     public ICommand CancelarItemCommand { get; }
     public ICommand CancelarCupomCommand { get; }
+
+    /// <summary>Busca por termo achou mais de um produto — a View decide o que fazer (normalmente abre a busca já filtrada por esse termo).</summary>
+    public event EventHandler<string>? VariosProdutosEncontrados;
 
     /// <summary>Exposto pra FechamentoVendaViewModel/VendaView montarem o fechamento (F3) sem essa ViewModel precisar conhecer a tela de fechamento.</summary>
     public Venda VendaAtual => _venda;
@@ -101,25 +115,35 @@ public sealed class VendaViewModel : ViewModelBase, IDisposable
     private async Task AdicionarPorCodigoAsync()
     {
         Mensagem = "";
-        var codigo = Codigo.Trim();
-        if (codigo.Length == 0)
+        var termo = Codigo.Trim();
+        if (termo.Length == 0)
             return;
 
-        var produto = await _vendaService.AdicionarItemPorCodigoAsync(_venda, codigo, CancellationToken.None);
-        if (produto is null)
+        // Aceita código, código de barras (gtin) e código interno (busca
+        // exata) ou nome do produto (ILIKE) — mesmo campo "Código/Descrição
+        // do Produto" serve pros dois tipos de busca, ver AdicionarItem.
+        var resultado = await _vendaService.AdicionarItemPorTermoAsync(_venda, termo, CancellationToken.None);
+
+        if (resultado.ProdutoAdicionado is not null)
         {
-            Mensagem = $"Nenhum produto encontrado com o código \"{codigo}\".";
+            Codigo = "";
+            AtualizarLista();
+
+            // Destaque segue o item recém-lançado (não o selecionado na
+            // lista, que continua sendo o que estava antes) — mesmo
+            // comportamento de VendaForm.AdicionarProdutoAoCarrinho no legado.
+            if (Itens.Count > 0)
+                AtualizarDestaque(Itens[^1]);
             return;
         }
 
-        Codigo = "";
-        AtualizarLista();
+        if (resultado.Candidatos.Count > 0)
+        {
+            VariosProdutosEncontrados?.Invoke(this, termo);
+            return;
+        }
 
-        // Destaque segue o item recém-lançado (não o selecionado na lista,
-        // que continua sendo o que estava antes) — mesmo comportamento de
-        // VendaForm.AdicionarProdutoAoCarrinho no legado.
-        if (Itens.Count > 0)
-            AtualizarDestaque(Itens[^1]);
+        Mensagem = $"Nenhum produto encontrado com \"{termo}\".";
     }
 
     private void CancelarItemSelecionado()
@@ -132,9 +156,16 @@ public sealed class VendaViewModel : ViewModelBase, IDisposable
         AtualizarLista();
     }
 
-    private void CancelarCupom()
+    private void CancelarCupom() => ReiniciarVenda();
+
+    /// <summary>Chamado pela View depois que FechamentoVendaView confirma a venda — mesmo estado inicial de uma venda nova, pro próximo cliente.</summary>
+    public void LimparAposFinalizar() => ReiniciarVenda();
+
+    private void ReiniciarVenda()
     {
         _venda = new Venda { IdMovimento = _venda.IdMovimento, IdFuncionario = _venda.IdFuncionario, IdOperador = _venda.IdOperador };
+        Codigo = "";
+        Mensagem = "";
         AtualizarLista();
         AtualizarDestaque(null);
     }

@@ -36,8 +36,8 @@ public sealed class VendaService
 
     public Venda NovaVenda(int idMovimento, int idFuncionario, int idOperador) => _abrirVenda.Executar(idMovimento, idFuncionario, idOperador);
 
-    public Task<GestorPDV.Domain.Entities.Produto?> AdicionarItemPorCodigoAsync(Venda venda, string codigo, CancellationToken ct)
-        => _adicionarItem.ExecutarPorCodigoAsync(venda, codigo, ct);
+    public Task<ResultadoAdicionarItem> AdicionarItemPorTermoAsync(Venda venda, string termo, CancellationToken ct)
+        => _adicionarItem.ExecutarPorTermoAsync(venda, termo, ct);
 
     public void AdicionarItem(Venda venda, GestorPDV.Domain.Entities.Produto produto) => _adicionarItem.Executar(venda, produto);
 

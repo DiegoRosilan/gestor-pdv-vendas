@@ -32,6 +32,8 @@ SDK; ver "Estado atual" abaixo).
 
 1. Edite `src/GestorPDV.App/appsettings.json` com os dados de conexão do
    banco de **TESTE** (nunca aponte pra produção sem testar antes).
+   `LogoPath` é opcional — caminho de uma imagem pra substituir o texto
+   de exemplo na tela de venda; vazio, mostra só o texto mesmo.
 2. `dotnet restore GestorPDV.sln`
 3. `dotnet build GestorPDV.sln`
 4. `dotnet run --project src/GestorPDV.App`

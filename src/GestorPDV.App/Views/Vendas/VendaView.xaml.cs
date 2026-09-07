@@ -2,8 +2,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using GestorPDV.App.ViewModels;
+using GestorPDV.App.Views.Autorizacao;
 using GestorPDV.App.Views.Fiscal;
 using GestorPDV.App.Views.Produtos;
+using GestorPDV.Application.Interfaces;
 using GestorPDV.Application.Services;
 
 namespace GestorPDV.App.Views.Vendas;
@@ -13,14 +15,17 @@ public partial class VendaView : UserControl
     private readonly VendaViewModel _viewModel;
     private readonly VendaService _vendaService;
     private readonly ProdutoService _produtoService;
+    private readonly IFuncionarioRepository _funcionarios;
 
-    public VendaView(VendaViewModel viewModel, VendaService vendaService, ProdutoService produtoService)
+    public VendaView(VendaViewModel viewModel, VendaService vendaService, ProdutoService produtoService, IFuncionarioRepository funcionarios)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _vendaService = vendaService;
         _produtoService = produtoService;
+        _funcionarios = funcionarios;
         DataContext = viewModel;
+        _viewModel.VariosProdutosEncontrados += (_, termo) => AbrirBuscaProduto(termo);
         Unloaded += (_, _) => _viewModel.Dispose();
     }
 
@@ -50,13 +55,11 @@ public partial class VendaView : UserControl
                 e.Handled = true;
                 break;
             case Key.F4:
-                if (_viewModel.CancelarCupomCommand.CanExecute(null))
-                    _viewModel.CancelarCupomCommand.Execute(null);
+                CancelarCupom();
                 e.Handled = true;
                 break;
             case Key.F5:
-                if (_viewModel.CancelarItemCommand.CanExecute(null))
-                    _viewModel.CancelarItemCommand.Execute(null);
+                CancelarItem();
                 e.Handled = true;
                 break;
             case Key.F7:
@@ -81,9 +84,22 @@ public partial class VendaView : UserControl
 
     private void AbrirBuscaProduto_Click(object sender, RoutedEventArgs e) => AbrirBuscaProduto();
 
-    private void AbrirBuscaProduto()
+    /// <summary>
+    /// Busca manual (F2/lupa) ou reaberta automaticamente quando a busca
+    /// por termo no campo principal encontra mais de um produto por nome
+    /// (ver VendaViewModel.VariosProdutosEncontrados) — nesse caso já
+    /// entra com o termo preenchido e a busca já disparada.
+    /// </summary>
+    private void AbrirBuscaProduto(string? termoInicial = null)
     {
         var produtoViewModel = new ProdutoViewModel(_produtoService);
+        if (termoInicial is not null)
+        {
+            produtoViewModel.Termo = termoInicial;
+            if (produtoViewModel.BuscarCommand.CanExecute(null))
+                produtoViewModel.BuscarCommand.Execute(null);
+        }
+
         var janela = new ConsultaProdutosView(produtoViewModel) { Owner = Window.GetWindow(this) };
         if (janela.ShowDialog() != true || produtoViewModel.ProdutoSelecionado is not { } produtoDto)
             return;
@@ -102,7 +118,12 @@ public partial class VendaView : UserControl
     {
         var fechamentoViewModel = new FechamentoVendaViewModel(_vendaService, _viewModel.VendaAtual);
         var janela = new FechamentoVendaView(fechamentoViewModel) { Owner = Window.GetWindow(this) };
-        janela.ShowDialog();
+
+        // Venda finalizada (DialogResult=true) libera a tela pro próximo
+        // cliente — antes disso a venda em andamento continuava na tela
+        // mesmo depois de fechada.
+        if (janela.ShowDialog() == true)
+            _viewModel.LimparAposFinalizar();
     }
 
     private void IdentificarCliente_Click(object sender, RoutedEventArgs e) => IdentificarCliente();
@@ -113,6 +134,30 @@ public partial class VendaView : UserControl
         MessageBox.Show(
             "Identificar cliente (F7) ainda não foi portado pra esta versão WPF.",
             "GestorPDV", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void CancelarCupom_Click(object sender, RoutedEventArgs e) => CancelarCupom();
+
+    private void CancelarCupom()
+    {
+        if (_viewModel.CancelarCupomCommand.CanExecute(null) && PedirAutorizacaoGerente("Cancelar Cupom"))
+            _viewModel.CancelarCupomCommand.Execute(null);
+    }
+
+    private void CancelarItem_Click(object sender, RoutedEventArgs e) => CancelarItem();
+
+    private void CancelarItem()
+    {
+        if (_viewModel.CancelarItemCommand.CanExecute(null) && PedirAutorizacaoGerente("Cancelar Item"))
+            _viewModel.CancelarItemCommand.Execute(null);
+    }
+
+    /// <summary>Cancelar cupom/item exige senha do gerente/supervisor — mesma exigência de segurança da abertura de turno.</summary>
+    private bool PedirAutorizacaoGerente(string titulo)
+    {
+        var autorizacaoViewModel = new SenhaGerenteViewModel(_funcionarios, titulo);
+        var janela = new SenhaGerenteView(autorizacaoViewModel) { Owner = Window.GetWindow(this) };
+        return janela.ShowDialog() == true;
     }
 
     private void AbrirMenuFiscal_Click(object sender, RoutedEventArgs e) => AbrirMenuFiscal();
