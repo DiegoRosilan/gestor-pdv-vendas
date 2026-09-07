@@ -110,7 +110,7 @@ public partial class App : global::System.Windows.Application
 
         var vendaService = provider.GetRequiredService<VendaService>();
         var produtoService = provider.GetRequiredService<ProdutoService>();
-        var vendaViewModel = new VendaViewModel(vendaService, idMovimento, funcionario.Id, idOperador);
+        var vendaViewModel = new VendaViewModel(vendaService, caixaService, idMovimento, funcionario.Id, idOperador, funcionario.Nome);
         var vendaView = new VendaView(vendaViewModel, vendaService, produtoService);
         var mainViewModel = new MainViewModel(vendaViewModel);
         var mainView = new MainView(mainViewModel, vendaView);

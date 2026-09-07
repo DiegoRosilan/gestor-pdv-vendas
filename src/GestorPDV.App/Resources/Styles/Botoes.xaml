@@ -41,6 +41,42 @@
         </Style.Triggers>
     </Style>
 
+    <!--
+        Botão da barra de funções F1-F12 (rodapé da VendaView) — rótulo em
+        cima e "(Fn)" embaixo, fundo escuro, linha divisória fina entre
+        botões, igual ao print de referência do sistema original.
+    -->
+    <Style x:Key="BotaoFuncao" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource PincelBarraEscura}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="BorderBrush" Value="#4A6B7D" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fundo"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fundo" Property="Background" Value="{StaticResource PincelAccent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="#8C98A5" />
+                <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Cada linha do flyout F1 Opções (VendaView) — ícone, texto e atalho/seta de submenu numa Grid de 3 colunas dentro do Content do Button. -->
     <Style x:Key="ItemMenuF1" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />

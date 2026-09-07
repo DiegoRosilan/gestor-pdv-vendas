@@ -4,105 +4,394 @@
              Background="{StaticResource PincelFundoClaro}"
              Focusable="True"
              KeyDown="VendaView_KeyDown">
-    <Grid x:Name="GradeRaiz" Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <!--
+        Layout replica à risca o print de referência do sistema original
+        (mesma estrutura de VendaForm.cs/PdvTheme.cs no legado): cabeçalho
+        escuro (faixa fina "GestorPDV" + faixa grande com a descrição do
+        item em destaque), corpo com "cupom" de itens à esquerda (615px de
+        largura fixa, igual ao legado) + total logo abaixo, coluna direita
+        com a marca da empresa, o estoque do item em destaque e os campos
+        de leitura (código, quantidade, valor unitário, valor total,
+        cliente), barra de status (relógio/terminal/operador/turno) e
+        barra de funções F1-F12 no rodapé.
+    -->
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="ConversorBoolParaVisibilidade" />
 
-        <!-- Código/Descrição do Produto (Enter chama AdicionarPorCodigoCommand no code-behind, ver KeyDown) -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock DockPanel.Dock="Top" Text="Código/Descrição do Produto:" Margin="0,0,0,4" />
-            <TextBox x:Name="CaixaCodigo" Text="{Binding Codigo, UpdateSourceTrigger=PropertyChanged}"
-                     Padding="8" FontSize="14" KeyDown="CaixaCodigo_KeyDown" />
+        <!-- Texto em fonte monoespaçada do "cupom" — tachado/vermelho quando o item está cancelado. -->
+        <Style x:Key="TextoCupom" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource PincelTextoPrimario}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Cancelado}" Value="True">
+                    <Setter Property="TextDecorations" Value="Strikethrough" />
+                    <Setter Property="Foreground" Value="{StaticResource PincelPerigo}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Cabeçalhos fixos do "cupom" (título/colunas) — sem o DataTrigger de Cancelado do TextoCupom, já que ficam fora do ItemTemplate (DataContext é a VendaViewModel, não um item). -->
+        <Style x:Key="TextoCupomCabecalho" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource PincelTextoPrimario}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid x:Name="GradeRaiz">
+        <DockPanel LastChildFill="True">
+
+            <!-- Cabeçalho -->
+            <Grid DockPanel.Dock="Top" Background="{StaticResource PincelBarraEscura}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Height="44">
+                    <TextBlock Text="GestorPDV" FontSize="15" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Grid HorizontalAlignment="Left" VerticalAlignment="Center" Margin="14,0,0,0" Height="34" Width="100">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Grid.Column="0" Fill="White" />
+                        <TextBlock Grid.Column="0" Text="PDV" FontSize="7" FontWeight="Bold"
+                                   Foreground="{StaticResource PincelBarraEscura}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="PDV" FontSize="12" FontWeight="Bold" Foreground="White"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                    </Grid>
+                </Grid>
+
+                <Border Grid.Row="1" Padding="20,16">
+                    <TextBlock Text="{Binding DescricaoAtual}" FontSize="28" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" TextAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </Border>
+            </Grid>
+
+            <!-- Barra de status -->
+            <Grid DockPanel.Dock="Bottom" Background="{StaticResource PincelBarraEscura}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="20" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <TextBlock Text="{Binding StatusLinha1}" Foreground="White" FontSize="10.5"
+                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                    <TextBlock Text="OFF" Foreground="{StaticResource PincelPerigo}" FontWeight="Bold" FontSize="10.5"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" />
+                </Grid>
+                <Grid Grid.Row="1">
+                    <TextBlock Text="{Binding StatusLinha2}" Foreground="White" FontSize="10.5"
+                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                    <TextBlock Text="v1.0.0" Foreground="White" FontSize="10.5"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" />
+                </Grid>
+            </Grid>
+
+            <!-- Barra de funções F1-F12 -->
+            <Grid DockPanel.Dock="Bottom" Height="46" Background="{StaticResource PincelBarraEscura}">
+                <UniformGrid Rows="1" Columns="12">
+                    <Button Style="{StaticResource BotaoFuncao}" Click="AbrirMenuOpcoes_Click">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Opções" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F1)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Click="AbrirBuscaProduto_Click">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Produtos" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F2)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Click="FecharVenda_Click">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Fecha Venda" FontSize="10.5" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Width="70" />
+                            <TextBlock Text="(F3)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Command="{Binding CancelarCupomCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Cancela Cupom" FontSize="10.5" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Width="80" />
+                            <TextBlock Text="(F4)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Command="{Binding CancelarItemCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Cancela Item" FontSize="10.5" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Width="80" />
+                            <TextBlock Text="(F5)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" IsEnabled="False">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Preços" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F6)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Click="IdentificarCliente_Click">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Clientes" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F7)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Click="AbrirMenuFiscal_Click">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Menu Fiscal" FontSize="10.5" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Width="76" />
+                            <TextBlock Text="(F8)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" IsEnabled="False">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Pré-Venda" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F9)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" IsEnabled="False">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Orçamento" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F10)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" IsEnabled="False">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Vendedor" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F11)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BotaoFuncao}" Click="Sair_Click">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Sair" FontSize="10.5" HorizontalAlignment="Center" />
+                            <TextBlock Text="(F12)" FontSize="9" HorizontalAlignment="Center" Opacity="0.85" />
+                        </StackPanel>
+                    </Button>
+                </UniformGrid>
+            </Grid>
+
+            <!-- Corpo: cupom de itens à esquerda, marca+campos à direita -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="615" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Painel esquerdo -->
+                <Grid Grid.Column="0" Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="51" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Cabeçalho do "cupom" -->
+                    <StackPanel Grid.Row="0" Margin="4,8,4,4">
+                        <TextBlock Text="CUPOM DE VENDA: (em aberto)    SÉRIE: 001" Style="{StaticResource TextoCupomCabecalho}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="*** RESUMO DA VENDA ***" Style="{StaticResource TextoCupomCabecalho}"
+                                   HorizontalAlignment="Center" Margin="0,4,0,8" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="45" />
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Item" Style="{StaticResource TextoCupomCabecalho}" />
+                            <TextBlock Grid.Column="1" Text="Código" Style="{StaticResource TextoCupomCabecalho}" />
+                            <TextBlock Grid.Column="2" Text="Descrição" Style="{StaticResource TextoCupomCabecalho}" />
+                        </Grid>
+                        <Grid Margin="45,2,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="55" />
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Qtde" Style="{StaticResource TextoCupomCabecalho}" />
+                            <TextBlock Grid.Column="1" Text="Unidade" Style="{StaticResource TextoCupomCabecalho}" />
+                            <TextBlock Grid.Column="2" Text="Vlr Unitário" Style="{StaticResource TextoCupomCabecalho}" />
+                            <TextBlock Grid.Column="3" Text="ST" Style="{StaticResource TextoCupomCabecalho}" />
+                            <TextBlock Grid.Column="4" Text="Vlr Total" Style="{StaticResource TextoCupomCabecalho}" />
+                        </Grid>
+                        <Border BorderBrush="{StaticResource PincelBorda}" BorderThickness="0,1,0,0" Margin="0,6,0,0" />
+                    </StackPanel>
+
+                    <!-- Lista de itens (estilo cupom, 2 linhas por item) -->
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Itens}" SelectedItem="{Binding ItemSelecionado}"
+                              BorderThickness="0" Background="White" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Focusable" Value="False" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Fundo" Background="Transparent">
+                                                <ContentPresenter />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Fundo" Property="Background" Value="#DCEAFB" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource PincelBorda}" BorderThickness="0,0,0,1" Padding="4,4">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="45" />
+                                                <ColumnDefinition Width="140" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding NumeroItem, StringFormat=000}" Style="{StaticResource TextoCupom}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Codigo}" Style="{StaticResource TextoCupom}" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Descricao}" Style="{StaticResource TextoCupom}" TextTrimming="CharacterEllipsis" />
+                                        </Grid>
+                                        <Grid Margin="45,0,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80" />
+                                                <ColumnDefinition Width="55" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="30" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Quantidade, StringFormat=0.000}" Style="{StaticResource TextoCupom}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Unidade, StringFormat='{}{0} x'}" Style="{StaticResource TextoCupom}" />
+                                            <TextBlock Grid.Column="2" Text="{Binding ValorUnitario, StringFormat=N2}" Style="{StaticResource TextoCupom}" />
+                                            <TextBlock Grid.Column="3" Text="0" Style="{StaticResource TextoCupom}" />
+                                            <TextBlock Grid.Column="4" Text="{Binding Total, StringFormat=N2}" Style="{StaticResource TextoCupom}" />
+                                        </Grid>
+                                        <Border Background="{StaticResource PincelFundoClaro}" Margin="0,3,0,0" Padding="6,3"
+                                                Visibility="{Binding Cancelado, Converter={StaticResource ConversorBoolParaVisibilidade}}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding NumeroItem, StringFormat='ITEM CANCELADO {0:000}'}"
+                                                           FontFamily="Consolas" FontSize="11" Foreground="{StaticResource PincelPerigo}" />
+                                                <TextBlock Grid.Column="1" Text="✕" FontWeight="Bold" FontSize="13" Foreground="{StaticResource PincelPerigo}" />
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Grid Grid.Row="2" Background="{StaticResource PincelFundoClaro}">
+                        <TextBlock Text="Total R$:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource PincelTextoSecundario}"
+                                   VerticalAlignment="Center" Margin="15,0,0,0" />
+                        <TextBlock Text="{Binding TotalGeral}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PincelTextoPrimario}"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,15,0" />
+                    </Grid>
+                </Grid>
+
+                <!-- Painel direito -->
+                <Grid Grid.Column="1" Background="{StaticResource PincelFundoClaro}">
+                    <StackPanel Margin="40,20,40,0">
+
+                        <!--
+                            Marca da empresa, igual ao print de referência —
+                            aqui como texto (não tenho o arquivo da logo
+                            real); se você me passar o PNG eu troco por ele.
+                        -->
+                        <TextBlock Text="A SOFTWARES" FontSize="28" FontWeight="Bold"
+                                   Foreground="{StaticResource PincelAccent}" HorizontalAlignment="Center" />
+                        <TextBlock Text="DESENVOLVIMENTO DE SISTEMAS  ·  MANUTENÇÃO DE COMPUTADORES"
+                                   FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource PincelTextoSecundario}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0" TextWrapping="Wrap" TextAlignment="Center" />
+
+                        <TextBlock Text="{Binding EstoqueAtual, StringFormat='Estoque: {0:N3}'}" FontSize="15" FontWeight="Bold"
+                                   Foreground="{StaticResource PincelTextoPrimario}" HorizontalAlignment="Center" Margin="0,16,0,0" />
+
+                        <TextBlock Text="Código/Descrição do Produto:" Margin="0,26,0,4" />
+                        <Grid>
+                            <TextBox x:Name="CaixaCodigo" Text="{Binding Codigo, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="10,8,36,8" FontSize="13" KeyDown="CaixaCodigo_KeyDown" />
+                            <Button Content="🔍" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0,0,4,0"
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand" Click="AbrirBuscaProduto_Click"
+                                    Padding="6,0" FontSize="14" Foreground="{StaticResource PincelTextoSecundario}" />
+                        </Grid>
+
+                        <Grid Margin="0,22,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="14" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <TextBlock Text="Quantidade" FontSize="10" Foreground="{StaticResource PincelTextoSecundario}" />
+                                <Border Background="{StaticResource PincelFundoClaro}" BorderBrush="{StaticResource PincelBorda}"
+                                        BorderThickness="1" Height="48" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding QuantidadeAtual, StringFormat=N3}" FontSize="20" FontWeight="Bold"
+                                               Foreground="{StaticResource PincelTextoPrimario}" VerticalAlignment="Center"
+                                               HorizontalAlignment="Right" Margin="0,0,10,0" />
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="2">
+                                <TextBlock Text="Valor Unitário" FontSize="10" Foreground="{StaticResource PincelTextoSecundario}" />
+                                <Border Background="White" BorderBrush="{StaticResource PincelBorda}"
+                                        BorderThickness="1" Height="48" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding ValorUnitarioAtual, StringFormat=N2}" FontSize="20" FontWeight="Bold"
+                                               Foreground="{StaticResource PincelTextoPrimario}" VerticalAlignment="Center"
+                                               HorizontalAlignment="Right" Margin="0,0,10,0" />
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                <TextBlock Text="Valor Total" FontSize="10" Foreground="{StaticResource PincelTextoSecundario}" />
+                                <Border Background="White" BorderBrush="{StaticResource PincelBorda}"
+                                        BorderThickness="1" Height="48" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding ValorTotalAtual, StringFormat=N2}" FontSize="20" FontWeight="Bold"
+                                               Foreground="{StaticResource PincelTextoPrimario}" VerticalAlignment="Center"
+                                               HorizontalAlignment="Right" Margin="0,0,10,0" />
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Cliente: (nenhum identificado — F7)" FontSize="10.5" Margin="0,26,0,0" />
+
+                        <TextBlock Text="{Binding Mensagem}" Foreground="{StaticResource PincelPerigo}"
+                                   TextWrapping="Wrap" Margin="0,14,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </DockPanel>
-
-        <!-- Grid de itens — Cancelado tachado + tarja "CANCELADO", igual ao WinForms legado -->
-        <DataGrid Grid.Row="1" ItemsSource="{Binding Itens}" SelectedItem="{Binding ItemSelecionado}"
-                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                  SelectionMode="Single" SelectionUnit="FullRow" Background="White"
-                  RowBackground="White" GridLinesVisibility="Horizontal">
-            <DataGrid.Resources>
-                <!--
-                    ElementStyle (não um Style de DataGridRow) porque
-                    TextDecorations não é uma propriedade herdada — só
-                    assim ela chega no TextBlock que a coluna gera pra
-                    exibir cada célula.
-                -->
-                <Style x:Key="CelulaTachadaSeCancelado" TargetType="TextBlock">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Cancelado}" Value="True">
-                            <Setter Property="TextDecorations" Value="Strikethrough" />
-                            <Setter Property="Foreground" Value="{StaticResource PincelTextoSecundario}" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </DataGrid.Resources>
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Item" Binding="{Binding NumeroItem}" Width="50" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTextColumn Header="Descrição" Binding="{Binding Descricao}" Width="*" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTextColumn Header="Qtde" Binding="{Binding Quantidade}" Width="70" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTextColumn Header="Unitário" Binding="{Binding ValorUnitario, StringFormat=N2}" Width="80" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTextColumn Header="Desconto" Binding="{Binding Desconto, StringFormat=N2}" Width="80" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=N2}" Width="90" ElementStyle="{StaticResource CelulaTachadaSeCancelado}" />
-                <DataGridTemplateColumn Header="Situação" Width="90">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="CANCELADO" Foreground="{StaticResource PincelPerigo}" FontWeight="Bold" Visibility="Collapsed">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Cancelado}" Value="True">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <TextBlock Grid.Row="2" Text="{Binding Mensagem}" Foreground="{StaticResource PincelPerigo}" Margin="0,8,0,0" />
-
-        <Grid Grid.Row="3" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding TotalGeral, StringFormat='Total R$: {0}'}" FontSize="20" FontWeight="Bold"
-                       VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button x:Name="BotaoF1Opcoes" Content="F1 Opções" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirMenuOpcoes_Click" />
-                <Button Content="F2 Produtos" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirBuscaProduto_Click" />
-                <Button Content="F3 Fecha Venda" Style="{StaticResource BotaoPrimario}" Margin="4,0" Click="FecharVenda_Click" />
-                <Button Content="F4 Cancela Cupom" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarCupomCommand}" />
-                <Button Content="F5 Cancela Item" Style="{StaticResource BotaoSecundario}" Margin="4,0" Command="{Binding CancelarItemCommand}" />
-                <Button Content="F8 Menu Fiscal" Style="{StaticResource BotaoSecundario}" Margin="4,0" Click="AbrirMenuFiscal_Click" />
-            </StackPanel>
-        </Grid>
 
         <!--
             Flyout F1 Opções — mesma listagem do PDV Delphi original (ver
             captura enviada), reproduzida aqui item a item: ícone + rótulo
             + atalho (ou seta "›" pra quem abre submenu). Ancorado na
-            GradeRaiz com offset negativo igual à Margem desta Grid (16)
-            pra encostar no canto esquerdo, logo abaixo da barra escura de
-            título (que é da MainView, fora desta UserControl) — mesma
+            GradeRaiz (que cobre a UserControl inteira, sem margem), com
+            VerticalOffset igual à altura aproximada do cabeçalho, pra
+            abrir logo abaixo dele até perto do rodapé — mesma
             posição/tamanho da referência. Itens só mostram um aviso
             "ainda não portado" ao clicar (ver OpcaoMenu_Click): nenhuma
             das 15 funções tem caso de uso implementado nesta arquitetura
             ainda, mesma situação dos stubs em GestorPDV.Infrastructure.
         -->
         <Popup x:Name="PopupOpcoes" PlacementTarget="{Binding ElementName=GradeRaiz}" Placement="Relative"
-               HorizontalOffset="-16" VerticalOffset="-16" StaysOpen="False" AllowsTransparency="True"
+               HorizontalOffset="0" VerticalOffset="170" StaysOpen="False" AllowsTransparency="True"
                PopupAnimation="Fade">
-            <Border Width="340" Height="620" Background="White" BorderBrush="{StaticResource PincelBorda}"
+            <Border Width="340" Height="500" Background="White" BorderBrush="{StaticResource PincelBorda}"
                     BorderThickness="0,0,1,1" CornerRadius="0,0,8,0">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.25" />

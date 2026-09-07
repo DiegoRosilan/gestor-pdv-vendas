@@ -21,6 +21,7 @@ public partial class VendaView : UserControl
         _vendaService = vendaService;
         _produtoService = produtoService;
         DataContext = viewModel;
+        Unloaded += (_, _) => _viewModel.Dispose();
     }
 
     private void CaixaCodigo_KeyDown(object sender, KeyEventArgs e)
@@ -30,7 +31,57 @@ public partial class VendaView : UserControl
             _viewModel.AdicionarPorCodigoCommand.Execute(null);
     }
 
-    private void AbrirBuscaProduto_Click(object sender, RoutedEventArgs e)
+    // ---- Barra de funções F1-F12 (clique e tecla chamam os mesmos métodos, igual a PdvTheme.CriarBarraFuncoes no legado) ----
+
+    private void VendaView_KeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.F1:
+                PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
+                e.Handled = true;
+                break;
+            case Key.F2:
+                AbrirBuscaProduto();
+                e.Handled = true;
+                break;
+            case Key.F3:
+                FecharVenda();
+                e.Handled = true;
+                break;
+            case Key.F4:
+                if (_viewModel.CancelarCupomCommand.CanExecute(null))
+                    _viewModel.CancelarCupomCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.F5:
+                if (_viewModel.CancelarItemCommand.CanExecute(null))
+                    _viewModel.CancelarItemCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.F7:
+                IdentificarCliente();
+                e.Handled = true;
+                break;
+            case Key.F8:
+                AbrirMenuFiscal();
+                e.Handled = true;
+                break;
+            case Key.F12:
+                Sair();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void AbrirMenuOpcoes_Click(object sender, RoutedEventArgs e)
+    {
+        PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
+    }
+
+    private void AbrirBuscaProduto_Click(object sender, RoutedEventArgs e) => AbrirBuscaProduto();
+
+    private void AbrirBuscaProduto()
     {
         var produtoViewModel = new ProdutoViewModel(_produtoService);
         var janela = new ConsultaProdutosView(produtoViewModel) { Owner = Window.GetWindow(this) };
@@ -45,26 +96,23 @@ public partial class VendaView : UserControl
             _viewModel.AdicionarPorCodigoCommand.Execute(null);
     }
 
-    private void FecharVenda_Click(object sender, RoutedEventArgs e)
+    private void FecharVenda_Click(object sender, RoutedEventArgs e) => FecharVenda();
+
+    private void FecharVenda()
     {
         var fechamentoViewModel = new FechamentoVendaViewModel(_vendaService, _viewModel.VendaAtual);
         var janela = new FechamentoVendaView(fechamentoViewModel) { Owner = Window.GetWindow(this) };
         janela.ShowDialog();
     }
 
-    private void VendaView_KeyDown(object sender, KeyEventArgs e)
+    private void IdentificarCliente_Click(object sender, RoutedEventArgs e) => IdentificarCliente();
+
+    // Identificar cliente (F7) ainda não tem View WPF (ver Views/Clientes) — mesma transparência do flyout F1.
+    private void IdentificarCliente()
     {
-        switch (e.Key)
-        {
-            case Key.F1:
-                PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
-                e.Handled = true;
-                break;
-            case Key.F8:
-                AbrirMenuFiscal();
-                e.Handled = true;
-                break;
-        }
+        MessageBox.Show(
+            "Identificar cliente (F7) ainda não foi portado pra esta versão WPF.",
+            "GestorPDV", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void AbrirMenuFiscal_Click(object sender, RoutedEventArgs e) => AbrirMenuFiscal();
@@ -76,9 +124,26 @@ public partial class VendaView : UserControl
         janela.ShowDialog();
     }
 
-    private void AbrirMenuOpcoes_Click(object sender, RoutedEventArgs e)
+    private void Sair_Click(object sender, RoutedEventArgs e) => Sair();
+
+    /// <summary>
+    /// Encerrar o turno antes de sair (EncerraCaixaForm no legado) ainda
+    /// não tem View WPF — aqui só fecha a janela principal, exigindo que a
+    /// venda em andamento já esteja fechada ou cancelada.
+    /// </summary>
+    private void Sair()
     {
-        PopupOpcoes.IsOpen = !PopupOpcoes.IsOpen;
+        if (_viewModel.Itens.Any(i => !i.Cancelado))
+        {
+            MessageBox.Show("Finalize ou cancele a venda em andamento antes de sair.",
+                "GestorPDV", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var resultado = MessageBox.Show("Deseja realmente sair do GestorPDV?",
+            "GestorPDV", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (resultado == MessageBoxResult.Yes)
+            Window.GetWindow(this)?.Close();
     }
 
     // Nenhuma das opções do menu F1 tem caso de uso implementado nesta
