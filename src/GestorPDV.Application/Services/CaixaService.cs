@@ -22,15 +22,19 @@ public sealed class CaixaService
 
     public Task<List<TerminalInfo>> GetTerminaisAsync(CancellationToken ct) => _caixa.GetTerminaisAsync(ct);
 
-    /// <summary>Confere login+senha do operador e senha do gerente/supervisor antes de abrir — igual à validação em AberturaTurnoForm.Confirmar.</summary>
-    public async Task<int> AbrirTurnoAsync(string loginOperador, string senhaOperador, string senhaGerente, int idCaixa, int idTurno, decimal suprimento, CancellationToken ct)
+    /// <summary>
+    /// Abre o turno pro operador já autenticado na LoginView (idOperador vem
+    /// de lá — sem pedir login/senha de novo, diferente do legado onde
+    /// AberturaTurnoForm fazia a própria autenticação do operador). Só
+    /// confere a senha do gerente/supervisor, autorização exigida pra abrir
+    /// o caixa — igual à validação em AberturaTurnoForm.Confirmar.
+    /// </summary>
+    public async Task<int> AbrirTurnoAsync(int idOperador, string senhaGerente, int idCaixa, int idTurno, decimal suprimento, CancellationToken ct)
     {
-        var operador = await _funcionarios.GetPorLoginAsync(loginOperador, ct)
-            ?? throw new InvalidOperationException("Operador não encontrado.");
         var gerente = await _funcionarios.ValidarGerenteAsync(senhaGerente, ct)
             ?? throw new InvalidOperationException("Senha do gerente/supervisor incorreta.");
 
-        return await _caixa.AbrirCaixaAsync(operador.Id, gerente.Id, idCaixa, idTurno, suprimento, ct);
+        return await _caixa.AbrirCaixaAsync(idOperador, gerente.Id, idCaixa, idTurno, suprimento, ct);
     }
 
     public Task EncerrarAsync(int idMovimento, IReadOnlyList<(string TipoPagamento, decimal Valor)> encerrantes, CancellationToken ct)

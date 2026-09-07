@@ -1,5 +1,6 @@
 using System.Windows;
 using GestorPDV.App.ViewModels;
+using GestorPDV.App.Views.Caixa;
 using GestorPDV.App.Views.Login;
 using GestorPDV.App.Views.Principal;
 using GestorPDV.App.Views.Vendas;
@@ -70,24 +71,10 @@ public partial class App : global::System.Windows.Application
         var caixaService = provider.GetRequiredService<CaixaService>();
         var funcionarios = provider.GetRequiredService<IFuncionarioRepository>();
 
-        int idMovimento;
+        int? movimentoAberto;
         try
         {
-            var movimentoAberto = await caixaService.GetMovimentoAbertoAsync(CancellationToken.None);
-            if (movimentoAberto is null)
-            {
-                // AberturaTurnoForm do legado ainda não tem View correspondente
-                // nesta estrutura (ver Views/Caixa/.gitkeep) — sem turno aberto
-                // não tem como abrir a tela de venda ainda.
-                MessageBox.Show(
-                    "Não há nenhum turno de caixa aberto, e a tela de abertura de turno "
-                    + "ainda não foi portada pra esta versão WPF. Abra um turno pelo "
-                    + "sistema legado (legacy/GestorPDV.Vendas) antes de usar esta versão.",
-                    "GestorPDV", MessageBoxButton.OK, MessageBoxImage.Warning);
-                Shutdown();
-                return;
-            }
-            idMovimento = movimentoAberto.Value;
+            movimentoAberto = await caixaService.GetMovimentoAbertoAsync(CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -97,7 +84,29 @@ public partial class App : global::System.Windows.Application
             return;
         }
 
-        var idOperador = await funcionarios.GetOrCreateOperadorAsync(funcionario.Id, CancellationToken.None);
+        int idMovimento;
+        int idOperador;
+        if (movimentoAberto is { } idMovimentoExistente)
+        {
+            idMovimento = idMovimentoExistente;
+            idOperador = await funcionarios.GetOrCreateOperadorAsync(funcionario.Id, CancellationToken.None);
+        }
+        else
+        {
+            // Sem movimento aberto: mostra a tela de abertura de turno
+            // (mesmo papel de AberturaTurnoForm no legado) antes de liberar
+            // a venda — o operador já autenticado na LoginView só escolhe
+            // turno/terminal/suprimento e confirma com a senha do gerente.
+            var aberturaViewModel = new AberturaTurnoViewModel(caixaService, funcionarios, funcionario.Id);
+            var aberturaView = new AberturaTurnoView(aberturaViewModel);
+            if (aberturaView.ShowDialog() != true || aberturaViewModel.IdMovimentoAberto is not { } idMovimentoAberto)
+            {
+                Shutdown();
+                return;
+            }
+            idMovimento = idMovimentoAberto;
+            idOperador = aberturaViewModel.IdOperador;
+        }
 
         var vendaService = provider.GetRequiredService<VendaService>();
         var produtoService = provider.GetRequiredService<ProdutoService>();

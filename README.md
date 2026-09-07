@@ -47,9 +47,6 @@ rodar o fluxo de login → venda → fechamento contra um banco real — mas
 ainda não é uma reescrita completa do legado. Faltando, entre outras
 coisas:
 
-- Tela de abertura de turno (WPF) — hoje, sem turno já aberto no banco,
-  o app avisa e sai (`App.xaml.cs`, método `OnStartup`); a lógica existe
-  em `CaixaService`, só falta a View.
 - Identificar cliente (F7) e Menu Fiscal (F8) — sem View WPF ainda
   (`Views/Clientes`, `Views/Configuracoes` vazias); o equivalente
   funcional existe no legado. O flyout F1 Opções (`VendaView.xaml`) já
